@@ -661,7 +661,7 @@ if(formattedDate == "15/11/2025"){
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600">
                     <div className="mb-2 sm:mb-0">
-                      <strong className="text-gray-900">Price:</strong> $40 per report
+                      <strong className="text-gray-900">Price:</strong> 
                     </div>
                     <div className="mb-2 sm:mb-0">
                       <strong className="text-gray-900">Delivery time:</strong> Instantly
