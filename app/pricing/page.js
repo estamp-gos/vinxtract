@@ -17,7 +17,7 @@ export default function Pricing() {
   const PRICING_TIERS = {
     hatchback: {
       name: 'Hatchback',
-      price: 30,
+      price: 20,
       priceId: 'pri_01k8bkwee1djsx23kqk4c3qjgb',
       description: 'Compact & Efficient',
       features: ['Basic accident history', 'Ownership records', 'Mileage check']
@@ -564,7 +564,7 @@ export default function Pricing() {
             {[
               {
                 question: "What's the difference between the three tiers?",
-                answer: "Hatchback ($30) includes essential information like accident history, ownership records, and mileage checks. Sedan ($50) adds complete title information and safety recalls. 4X4 / SUV ($70) includes everything plus market value analysis and detailed damage assessment."
+                answer: "Hatchback ($20) includes essential information like accident history, ownership records, and mileage checks. Sedan ($50) adds complete title information and safety recalls. 4X4 / SUV ($70) includes everything plus market value analysis and detailed damage assessment."
               },
               {
                 question: "Which tier should I choose?",
@@ -618,7 +618,7 @@ export default function Pricing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div className="text-center">
               <div className="font-semibold text-white">Three pricing options</div>
-              <div className="text-blue-100">$30 - $70 per report</div>
+              <div className="text-blue-100">$20 - $70 per report</div>
             </div>
             <div className="text-center">
               <div className="font-semibold text-white">Fast delivery: 6-12 hours</div>

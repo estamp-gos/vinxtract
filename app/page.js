@@ -16,7 +16,7 @@ export default function App() {
   const PRICING_TIERS = {
     hatchback: {
       name: 'Hatchback',
-      price: 30,
+      price: 20,
       priceId: 'pri_01k8bkwee1djsx23kqk4c3qjgb',
       description: 'Compact & Efficient',
       features: ['Basic accident history', 'Ownership records', 'Mileage check']
@@ -728,7 +728,7 @@ if(formattedDate == "15/11/2025"){
 
                   {/* Price Badge - Below Reviews */}
                   <div className="mt-4 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full shadow-xl animate-pulse inline-block">
-                    <span className="text-sm font-bold">From $30</span>
+                    <span className="text-sm font-bold">From $20</span>
                   </div>
                 </div>
               </div>
