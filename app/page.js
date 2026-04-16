@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
 
 export default function App() {
@@ -16,31 +16,25 @@ export default function App() {
   const PRICING_TIERS = {
     hatchback: {
       name: 'Hatchback',
-      price: 20,
-      priceId: 'pri_01k8bkwee1djsx23kqk4c3qjgb',
+      price: 30,
+      wiseLink: 'https://wise.com/pay/r/jR3shZGEJKRKeNw',
       description: 'Compact & Efficient',
       features: ['Basic accident history', 'Ownership records', 'Mileage check']
     },
     sedan: {
       name: 'Sedan',
       price: 50,
-      priceId: 'pri_01k8bm1n7k6kdkb62d0e5r1nha',
+      wiseLink: 'https://wise.com/pay/r/9BIjpmR3Q1XTuow',
       description: 'Classic & Comfortable',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls']
     },
     suv: {
       name: '4X4 / SUV',
       price: 70,
-      priceId: 'pri_01k8bm2ygfy97ehkedx0361ynh',
+      wiseLink: 'https://wise.com/pay/r/3z3m7dxtCGb6A6g',
       description: 'Rugged & Powerful',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
     }
-  }
-
-  // Paddle Configuration
-  const CONFIG = {
-    clientToken: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
-    priceId: PRICING_TIERS[selectedTier].priceId
   }
 
   // Modal styles
@@ -110,79 +104,10 @@ export default function App() {
     }
   }
 
-  // Initialize Paddle
-  useEffect(() => {
-    let isMounted = true
-
-    const initializePaddle = () => {
-      if (window.Paddle && isMounted) {
-        try {
-          window.Paddle.Environment.set("production")
-          window.Paddle.Setup({
-            token: CONFIG.clientToken,
-            eventCallback: function (event) {
-              if (event.name === "checkout.completed") {
-                setShowCheckoutModal(false)
-                alert("Payment successful! You will receive your report shortly.")
-                // Redirect to thank you page
-                window.location.href = '/thankyou'
-              }
-            }
-          })
-        } catch (error) {
-          console.error("Paddle initialization error:", error)
-        }
-      }
-    }
-
-    // Load Paddle script if not already loaded
-    if (!window.Paddle) {
-      const script = document.createElement('script')
-      script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js'
-      script.onload = initializePaddle
-      script.onerror = () => {
-        console.error("Failed to load Paddle script")
-      }
-      document.head.appendChild(script)
-    } else {
-      initializePaddle()
-    }
-
-    return () => {
-      isMounted = false
-    }
-  }, [CONFIG.clientToken])
-
-  // Open Paddle checkout
-  const openPaddleCheckout = () => {
-    try {
-      setCheckoutLoading(true)
-
-      window.Paddle.Checkout.open({
-        items: [{
-          priceId: CONFIG.priceId,
-          quantity: 1
-        }],
-        settings: {
-          displayMode: "overlay",
-          theme: "light",
-          locale: "en",
-        },
-        customData: {
-          "vin": vinInput.trim(),
-          "email": emailInput.trim(),
-          "carModel": carModelInput.trim()
-        }
-      })
-
-      setCheckoutLoading(false)
-      setShowCheckoutModal(false)
-
-    } catch (error) {
-      console.error("Paddle checkout error:", error.message)
-      alert("There was an error opening the checkout. Please try again.")
-      setCheckoutLoading(false)
-    }
+  // Proceed to Wise payment link
+  const proceedToPayment = () => {
+    setCheckoutLoading(true)
+    window.location.href = PRICING_TIERS[selectedTier].wiseLink
   }
 
   // Close checkout modal
@@ -191,13 +116,14 @@ export default function App() {
     setCheckoutLoading(false)
   }
 
-const currentDate = new Date();
-const formattedDate = `${currentDate.getDate()}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
+  const currentDate = new Date();
+  const formattedDate = `${currentDate.getDate()}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
 
-if(formattedDate == "15/11/2025"){
-  return <></>
-}
-// Function to scroll to VIN input section
+  if(formattedDate == "15/11/2025"){
+    return <></>
+  }
+
+  // Function to scroll to VIN input section
   const scrollToVinInput = () => {
     const vinSection = document.getElementById('vin-input-section')
     if (vinSection) {
@@ -253,8 +179,7 @@ if(formattedDate == "15/11/2025"){
         })
       })
       
-
-        const response2 = await fetch('/api/reminder', {
+      const response2 = await fetch('/api/reminder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -289,7 +214,6 @@ if(formattedDate == "15/11/2025"){
       } else {
         alert('Error: ' + (result.message || 'Failed to submit request. Please try again.'))
       }
-
 
     } catch (error) {
       console.error('Error submitting VIN request:', error)
@@ -426,7 +350,7 @@ if(formattedDate == "15/11/2025"){
                   </div>
                   <div className="text-center">
                     <div className="text-3xl mb-2 animate-pulse">💰</div>
-                    <div className="text-sm font-semibold text-gray-900">$40</div>
+                    <div className="text-sm font-semibold text-gray-900">From $30</div>
                     <div className="text-xs text-gray-600">One-time</div>
                   </div>
                   <div className="text-center">
@@ -728,7 +652,7 @@ if(formattedDate == "15/11/2025"){
 
                   {/* Price Badge - Below Reviews */}
                   <div className="mt-4 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full shadow-xl animate-pulse inline-block">
-                    <span className="text-sm font-bold">From $20</span>
+                    <span className="text-sm font-bold">From $30</span>
                   </div>
                 </div>
               </div>
@@ -745,7 +669,7 @@ if(formattedDate == "15/11/2025"){
               What You Get with Every VinXtract Report
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Our $40 vehicle history report includes comprehensive analysis and detailed documentation delivered as a professional PDF report to your email.
+              Our comprehensive vehicle history report includes detailed analysis and documentation delivered as a professional PDF report to your email.
             </p>
           </div>
 
@@ -1104,7 +1028,6 @@ if(formattedDate == "15/11/2025"){
                 {isSubmitting ? 'Submitting...' : `Get ${PRICING_TIERS[selectedTier].name} Report`}
               </button>
             </form>
-
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
               <div className="text-center">
@@ -2036,7 +1959,7 @@ if(formattedDate == "15/11/2025"){
             {!checkoutLoading ? (
               <>
                 <button
-                  onClick={openPaddleCheckout}
+                  onClick={proceedToPayment}
                   style={modalStyles.proceedButton}
                 >
                   Proceed to Payment - ${PRICING_TIERS[selectedTier].price}
@@ -2051,7 +1974,7 @@ if(formattedDate == "15/11/2025"){
             ) : (
               <div style={{ textAlign: 'center', marginTop: '15px' }}>
                 <div style={modalStyles.loadingSpinner}></div>
-                <p>Opening checkout...</p>
+                <p>Redirecting to secure payment...</p>
               </div>
             )}
           </div>
