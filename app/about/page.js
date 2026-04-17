@@ -207,7 +207,7 @@ export default function About() {
               </div>
               <div>
                 <h4 className="font-semibold text-white mb-2">Pricing</h4>
-                <p className="text-blue-100">$20 per comprehensive vehicle history report</p>
+                <p className="text-blue-100">$30 per comprehensive vehicle history report</p>
               </div>
               <div>
                 <h4 className="font-semibold text-white mb-2">Delivery Method</h4>

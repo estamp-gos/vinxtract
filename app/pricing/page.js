@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 export default function Pricing() {
   const [showModal, setShowModal] = useState(false);
-  const [selectedTier, setSelectedTier] = useState('sedan');
+  const [selectedTier, setSelectedTier] = useState('standard');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -15,24 +15,27 @@ export default function Pricing() {
 
   // Pricing Tiers Configuration - Vehicle Types
   const PRICING_TIERS = {
-    hatchback: {
-      name: 'Hatchback',
-      price: 20,
+    basic: {
+      name: 'Basic',
+      price: 30,
       priceId: 'pri_01k8bkwee1djsx23kqk4c3qjgb',
+      wiseLink: 'https://wise.com/pay/r/jR3shZGEJKRKeNw',
       description: 'Compact & Efficient',
       features: ['Basic accident history', 'Ownership records', 'Mileage check']
     },
-    sedan: {
-      name: 'Sedan',
+    standard: {
+      name: 'Standard',
       price: 50,
       priceId: 'pri_01k8bm1n7k6kdkb62d0e5r1nha',
+      wiseLink: 'https://wise.com/pay/r/9BIjpmR3Q1XTuow',
       description: 'Classic & Comfortable',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls']
     },
-    suv: {
-      name: '4X4 / SUV',
+    premium: {
+      name: 'Premium',
       price: 70,
       priceId: 'pri_01k8bm2ygfy97ehkedx0361ynh',
+      wiseLink: 'https://wise.com/pay/r/3z3m7dxtCGb6A6g',
       description: 'Rugged & Powerful',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
     }
@@ -60,6 +63,7 @@ export default function Pricing() {
     },
     modal: {
       backgroundColor: 'white',
+      color: '#000',
       width: '90%',
       maxWidth: '500px',
       padding: '30px',
@@ -79,7 +83,8 @@ export default function Pricing() {
       padding: '12px',
       border: '1px solid #ddd',
       borderRadius: '5px',
-      fontSize: '16px'
+      fontSize: '16px',
+      color: '#000'
     },
     submitButton: {
       width: '100%',
@@ -231,7 +236,8 @@ export default function Pricing() {
     };
 
     sendMail(submitData);
-    openPaddleCheckout(formData.name, formData.email, formData.vin);
+    // openPaddleCheckout(formData.name, formData.email, formData.vin);
+    window.location.href = PRICING_TIERS[selectedTier].wiseLink;
   };
   return (
     <div className="min-h-screen bg-white">
@@ -354,9 +360,9 @@ export default function Pricing() {
                 <thead>
                   <tr className="border-b-2 border-gray-300">
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Feature</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Hatchback</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Sedan</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-900">4X4 / SUV</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Basic</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Standard</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Premium</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -564,11 +570,11 @@ export default function Pricing() {
             {[
               {
                 question: "What's the difference between the three tiers?",
-                answer: "Hatchback ($20) includes essential information like accident history, ownership records, and mileage checks. Sedan ($50) adds complete title information and safety recalls. 4X4 / SUV ($70) includes everything plus market value analysis and detailed damage assessment."
+                answer: "Basic ($30) includes essential information like accident history, ownership records, and mileage checks. Standard ($50) adds complete title information and safety recalls. Premium ($70) includes everything plus market value analysis and detailed damage assessment."
               },
               {
                 question: "Which tier should I choose?",
-                answer: "Choose Hatchback if you just need essential information. Choose Sedan for a complete overview (most popular). Choose 4X4 / SUV if you're considering a purchase and want comprehensive analysis including market value and detailed damage assessment."
+                answer: "Choose Basic if you just need essential information. Choose Standard for a complete overview (most popular). Choose Premium if you're considering a purchase and want comprehensive analysis including market value and detailed damage assessment."
               },
               {
                 question: "Are there any hidden fees or recurring charges?",
@@ -611,14 +617,14 @@ export default function Pricing() {
               onClick={openModal}
               className="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-lg inline-block"
             >
-              Get Started - From ${PRICING_TIERS.hatchback.price}
+              Get Started - From ${PRICING_TIERS.basic.price}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div className="text-center">
               <div className="font-semibold text-white">Three pricing options</div>
-              <div className="text-blue-100">$20 - $70 per report</div>
+              <div className="text-blue-100">$30 - $70 per report</div>
             </div>
             <div className="text-center">
               <div className="font-semibold text-white">Fast delivery: 6-12 hours</div>

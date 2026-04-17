@@ -10,26 +10,27 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
-  const [selectedTier, setSelectedTier] = useState('sedan')
+  const [selectedTier, setSelectedTier] = useState('standard')
+  const [vehicleType, setVehicleType] = useState('Car')
 
   // Pricing Tiers Configuration - Vehicle Types
   const PRICING_TIERS = {
-    hatchback: {
-      name: 'Hatchback',
+    basic: {
+      name: 'Basic',
       price: 30,
       wiseLink: 'https://wise.com/pay/r/jR3shZGEJKRKeNw',
       description: 'Compact & Efficient',
       features: ['Basic accident history', 'Ownership records', 'Mileage check']
     },
-    sedan: {
-      name: 'Sedan',
+    standard: {
+      name: 'Standard',
       price: 50,
       wiseLink: 'https://wise.com/pay/r/9BIjpmR3Q1XTuow',
       description: 'Classic & Comfortable',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls']
     },
-    suv: {
-      name: '4X4 / SUV',
+    premium: {
+      name: 'Premium',
       price: 70,
       wiseLink: 'https://wise.com/pay/r/3z3m7dxtCGb6A6g',
       description: 'Rugged & Powerful',
@@ -175,7 +176,8 @@ export default function App() {
           carModel: carModelInput.trim(),
           tier: selectedTier,
           tierName: PRICING_TIERS[selectedTier].name,
-          tierPrice: PRICING_TIERS[selectedTier].price
+          tierPrice: PRICING_TIERS[selectedTier].price,
+          vehicleType: vehicleType
         })
       })
       
@@ -190,7 +192,8 @@ export default function App() {
           carModel: carModelInput.trim(),
           tier: selectedTier,
           tierName: PRICING_TIERS[selectedTier].name,
-          tierPrice: PRICING_TIERS[selectedTier].price
+          tierPrice: PRICING_TIERS[selectedTier].price,
+          vehicleType: vehicleType
         })
       })
 
@@ -206,6 +209,7 @@ export default function App() {
           tier: selectedTier,
           tierName: PRICING_TIERS[selectedTier].name,
           tierPrice: PRICING_TIERS[selectedTier].price,
+          vehicleType: vehicleType,
           timestamp: new Date().toISOString()
         }))
 
@@ -389,28 +393,36 @@ export default function App() {
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
                       Select Your Report Type
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <select
+                      value={selectedTier}
+                      onChange={(e) => setSelectedTier(e.target.value)}
+                      className="w-full text-gray-700 px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg font-semibold transition-all hover:border-blue-300 bg-white"
+                      required
+                    >
                       {Object.entries(PRICING_TIERS).map(([key, tier]) => (
-                        <div
-                          key={key}
-                          onClick={() => setSelectedTier(key)}
-                          className={`p-4 rounded-lg cursor-pointer transition-all transform ${
-                            selectedTier === key
-                              ? 'bg-blue-600 text-white shadow-lg border-2 border-blue-600 scale-105'
-                              : 'bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-blue-300'
-                          }`}
-                        >
-                          <div className="text-2xl font-bold mb-1">${tier.price}</div>
-                          <h4 className="text-sm font-bold mb-1">{tier.name}</h4>
-                          <p className={`text-xs ${selectedTier === key ? 'text-blue-100' : 'text-gray-600'}`}>
-                            {tier.description}
-                          </p>
-                        </div>
+                        <option key={key} value={key}>
+                          {tier.name} - ${tier.price}
+                        </option>
                       ))}
-                    </div>
+                    </select>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Vehicle Type
+                      </label>
+                      <select
+                        value={vehicleType}
+                        onChange={(e) => setVehicleType(e.target.value)}
+                        className="w-full text-gray-700 px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg font-semibold transition-all hover:border-blue-300 bg-white"
+                        required
+                      >
+                        {["Jeep", "Car", "Bike", "Truck", "Camper Van", "ATV", "Boat", "Jet Ski", "Van", "RV (Class A)", "RV (Class B)", "RV (Class C)", "Trailer", "Fifth Wheel", "Toy Hauler"].map(type => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="flex-1">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         1. Enter VIN Number
