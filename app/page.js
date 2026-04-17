@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 
 export default function App() {
@@ -12,26 +12,53 @@ export default function App() {
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [selectedTier, setSelectedTier] = useState('standard')
   const [vehicleType, setVehicleType] = useState('Car')
+  
+  // IP Detection & Currency State
+  const [currency, setCurrency] = useState({ symbol: '$', code: 'USD', rate: 1 })
+
+  useEffect(() => {
+    const detectLocation = async () => {
+      try {
+        // Free IP geolocation API, no key required
+        const response = await fetch('https://api.country.is')
+        const data = await response.json()
+        
+        if (data.country === 'GB') {
+          // Adjust the exchange rate here as needed
+          setCurrency({ symbol: '£', code: 'GBP', rate: 0.79 }) 
+        }
+      } catch (error) {
+        console.error('Failed to detect IP location:', error)
+      }
+    }
+    
+    detectLocation()
+  }, [])
+
+  // Helper function to dynamically format prices based on the detected currency
+  const formatPrice = (usdPrice) => {
+    return `${currency.symbol}${Math.round(usdPrice * currency.rate).toLocaleString()}`
+  }
 
   // Pricing Tiers Configuration - Vehicle Types
   const PRICING_TIERS = {
     basic: {
       name: 'Basic',
-      price: 30,
+      price: 30, // Base price in USD
       wiseLink: 'https://wise.com/pay/r/jR3shZGEJKRKeNw',
       description: 'Compact & Efficient',
       features: ['Basic accident history', 'Ownership records', 'Mileage check']
     },
     standard: {
       name: 'Standard',
-      price: 50,
+      price: 50, // Base price in USD
       wiseLink: 'https://wise.com/pay/r/9BIjpmR3Q1XTuow',
       description: 'Classic & Comfortable',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls']
     },
     premium: {
       name: 'Premium',
-      price: 70,
+      price: 70, // Base price in USD
       wiseLink: 'https://wise.com/pay/r/3z3m7dxtCGb6A6g',
       description: 'Rugged & Powerful',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
@@ -163,6 +190,8 @@ export default function App() {
 
     setIsSubmitting(true)
 
+    const currentTierPrice = Math.round(PRICING_TIERS[selectedTier].price * currency.rate);
+
     try {
       // Send VIN, email, car model, and pricing tier to backend
       const response = await fetch('/api/send-vin', {
@@ -176,7 +205,8 @@ export default function App() {
           carModel: carModelInput.trim(),
           tier: selectedTier,
           tierName: PRICING_TIERS[selectedTier].name,
-          tierPrice: PRICING_TIERS[selectedTier].price,
+          tierPrice: currentTierPrice,
+          currency: currency.code,
           vehicleType: vehicleType
         })
       })
@@ -192,7 +222,8 @@ export default function App() {
           carModel: carModelInput.trim(),
           tier: selectedTier,
           tierName: PRICING_TIERS[selectedTier].name,
-          tierPrice: PRICING_TIERS[selectedTier].price,
+          tierPrice: currentTierPrice,
+          currency: currency.code,
           vehicleType: vehicleType
         })
       })
@@ -208,7 +239,9 @@ export default function App() {
           carModel: carModelInput.trim(),
           tier: selectedTier,
           tierName: PRICING_TIERS[selectedTier].name,
-          tierPrice: PRICING_TIERS[selectedTier].price,
+          tierPrice: currentTierPrice,
+          currency: currency.code,
+          currencySymbol: currency.symbol,
           vehicleType: vehicleType,
           timestamp: new Date().toISOString()
         }))
@@ -354,7 +387,7 @@ export default function App() {
                   </div>
                   <div className="text-center">
                     <div className="text-3xl mb-2 animate-pulse">💰</div>
-                    <div className="text-sm font-semibold text-gray-900">From $30</div>
+                    <div className="text-sm font-semibold text-gray-900">From {formatPrice(30)}</div>
                     <div className="text-xs text-gray-600">One-time</div>
                   </div>
                   <div className="text-center">
@@ -401,7 +434,7 @@ export default function App() {
                     >
                       {Object.entries(PRICING_TIERS).map(([key, tier]) => (
                         <option key={key} value={key}>
-                          {tier.name} - ${tier.price}
+                          {tier.name} - {formatPrice(tier.price)}
                         </option>
                       ))}
                     </select>
@@ -507,7 +540,7 @@ export default function App() {
                         </span>
                       ) : (
                         <span className="flex items-center justify-center">
-                          🚗 Get My {PRICING_TIERS[selectedTier].name} Report - ${PRICING_TIERS[selectedTier].price}
+                          🚗 Get My {PRICING_TIERS[selectedTier].name} Report - {formatPrice(PRICING_TIERS[selectedTier].price)}
                           <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                           </svg>
@@ -644,7 +677,7 @@ export default function App() {
                         <div className="text-xs text-gray-500">2 hours ago</div>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-700">&quot;Saved me $3,000! Found hidden accident damage.&quot;</p>
+                    <p className="text-sm text-gray-700">&quot;Saved me {formatPrice(3000)}! Found hidden accident damage.&quot;</p>
                     <div className="text-yellow-400 text-sm mt-1">⭐⭐⭐⭐⭐</div>
                   </div>
 
@@ -664,7 +697,7 @@ export default function App() {
 
                   {/* Price Badge - Below Reviews */}
                   <div className="mt-4 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full shadow-xl animate-pulse inline-block">
-                    <span className="text-sm font-bold">From $30</span>
+                    <span className="text-sm font-bold">From {formatPrice(30)}</span>
                   </div>
                 </div>
               </div>
@@ -971,7 +1004,7 @@ export default function App() {
                         : 'bg-white text-gray-900 border-2 border-gray-200 hover:border-blue-300'
                     }`}
                   >
-                    <div className="text-4xl font-bold mb-2">${tier.price}</div>
+                    <div className="text-4xl font-bold mb-2">{formatPrice(tier.price)}</div>
                     <h4 className="text-xl font-bold mb-2">{tier.name}</h4>
                     <p className={`text-sm mb-4 ${selectedTier === key ? 'text-blue-100' : 'text-gray-600'}`}>
                       {tier.description}
@@ -1043,7 +1076,7 @@ export default function App() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
               <div className="text-center">
-                <div className="font-semibold text-gray-900">One-time fee: ${PRICING_TIERS[selectedTier].price}</div>
+                <div className="font-semibold text-gray-900">One-time fee: {formatPrice(PRICING_TIERS[selectedTier].price)}</div>
               </div>
               <div className="text-center">
                 <div className="font-semibold text-gray-900">Report delivered within 6–12 hours</div>
@@ -1307,7 +1340,7 @@ export default function App() {
                 </div>
                 <div className="flex justify-between items-center py-2 border-b">
                   <span className="text-gray-600">Estimated Cost:</span>
-                  <span className="font-semibold">$8,500</span>
+                  <span className="font-semibold">{formatPrice(8500)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600">Vehicle Totaled:</span>
@@ -1411,19 +1444,19 @@ export default function App() {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Excellent Condition:</span>
-                  <span className="font-semibold text-green-600">$25,500</span>
+                  <span className="font-semibold text-green-600">{formatPrice(25500)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Good Condition:</span>
-                  <span className="font-semibold text-blue-600">$22,800</span>
+                  <span className="font-semibold text-blue-600">{formatPrice(22800)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Fair Condition:</span>
-                  <span className="font-semibold text-orange-600">$19,200</span>
+                  <span className="font-semibold text-orange-600">{formatPrice(19200)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Poor Condition:</span>
-                  <span className="font-semibold text-red-600">$15,500</span>
+                  <span className="font-semibold text-red-600">{formatPrice(15500)}</span>
                 </div>
               </div>
             </div>
@@ -1438,11 +1471,11 @@ export default function App() {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Original MSRP:</span>
-                  <span className="font-semibold">$32,000</span>
+                  <span className="font-semibold">{formatPrice(32000)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Current Value:</span>
-                  <span className="font-semibold text-blue-600">$22,800</span>
+                  <span className="font-semibold text-blue-600">{formatPrice(22800)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Depreciation:</span>
@@ -1465,7 +1498,7 @@ export default function App() {
               <div className="space-y-4">
                 <div className="bg-green-50 p-4 rounded-lg">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600 mb-2">$21,500 - $24,000</div>
+                    <div className="text-2xl font-bold text-green-600 mb-2">{formatPrice(21500)} - {formatPrice(24000)}</div>
                     <div className="text-sm text-green-700">Recommended Price Range</div>
                   </div>
                 </div>
@@ -1904,7 +1937,7 @@ export default function App() {
               <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
               <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
             </svg>
-            <span className="font-bold">Get Report ${PRICING_TIERS[selectedTier].price}</span>
+            <span className="font-bold">Get Report {formatPrice(PRICING_TIERS[selectedTier].price)}</span>
           </div>
           <span className="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full w-8 h-8 flex items-center justify-center animate-bounce">🔥</span>
         </button>
@@ -1960,7 +1993,7 @@ export default function App() {
                 <strong>Car Model:</strong> {carModelInput}
               </p>
               <p style={{ marginBottom: '0', fontSize: '14px', color: '#4b5563' }}>
-                <strong>Report Type:</strong> {PRICING_TIERS[selectedTier].name} - ${PRICING_TIERS[selectedTier].price}
+                <strong>Report Type:</strong> {PRICING_TIERS[selectedTier].name} - {formatPrice(PRICING_TIERS[selectedTier].price)}
               </p>
             </div>
 
@@ -1974,7 +2007,7 @@ export default function App() {
                   onClick={proceedToPayment}
                   style={modalStyles.proceedButton}
                 >
-                  Proceed to Payment - ${PRICING_TIERS[selectedTier].price}
+                  Proceed to Payment - {formatPrice(PRICING_TIERS[selectedTier].price)}
                 </button>
                 <button
                   onClick={closeCheckoutModal}
