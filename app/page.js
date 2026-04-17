@@ -418,7 +418,7 @@ export default function App() {
                         className="w-full text-gray-700 px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg font-semibold transition-all hover:border-blue-300 bg-white"
                         required
                       >
-                        {["Jeep", "Car", "Bike", "Truck", "Camper Van", "ATV", "Boat", "Jet Ski", "Van", "RV (Class A)", "RV (Class B)", "RV (Class C)", "Trailer", "Fifth Wheel", "Toy Hauler"].map(type => (
+                        {["Jeep", "Car", "Bike", "Truck", "Camper Van", "ATV", "Boat", "Jet Ski", "Van", "RV (Class A)", "RV (Class B)", "RV (Class C)", "Trailer", "Fifth Wheel", "Toy Hauler", "Caravan", "Motorhome"].map(type => (
                           <option key={type} value={type}>{type}</option>
                         ))}
                       </select>
