@@ -40,26 +40,72 @@ export default function App() {
     return `${currency.symbol}${Math.round(usdPrice * currency.rate).toLocaleString()}`
   }
 
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
+
+  const [links, setLinks] = useState({
+    basic: 'https://payoneer.com/basic',
+    standard: 'https://payoneer.com/standard',
+    premium: 'https://payoneer.com/premium'
+  });
+
+  // Load config from Google Sheets
+  useEffect(() => {
+    async function initLinks() {
+      try {
+        // 1. Get Google Sheets URL from config.json
+        const configRes = await fetch('/config.json');
+        const config = await configRes.json();
+        
+        // Use local fallbacks first
+        const initialLinks = {
+          basic: config.payoneerLink_basic || 'https://payoneer.com/basic',
+          standard: config.payoneerLink_standard || 'https://payoneer.com/standard',
+          premium: config.payoneerLink_premium || 'https://payoneer.com/premium'
+        };
+        setLinks(initialLinks);
+
+        // 2. Fetch fresh data from Google Sheets if URL exists
+        const sheetUrl = config.APPS_SCRIPT_URL || APPS_SCRIPT_URL || localStorage.getItem('vinxtract_config_url');
+        if (sheetUrl) {
+          const res = await fetch(`${sheetUrl}?action=getConfig`);
+          if (res.ok) {
+            const data = await res.json();
+            setLinks({
+              basic: data.payoneerLink_basic || initialLinks.basic,
+              standard: data.payoneerLink_standard || initialLinks.standard,
+              premium: data.payoneerLink_premium || initialLinks.premium
+            });
+            // Also store URL in localStorage for setup.html
+            localStorage.setItem('vinxtract_config_url', sheetUrl);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load links:', err);
+      }
+    }
+    initLinks();
+  }, []);
+
   // Pricing Tiers Configuration - Vehicle Types
   const PRICING_TIERS = {
     basic: {
       name: 'Basic',
       price: 30, // Base price in USD
-      wiseLink: 'https://wise.com/pay/r/jR3shZGEJKRKeNw',
+      payoneerLink: links.basic,
       description: 'Compact & Efficient',
       features: ['Basic accident history', 'Ownership records', 'Mileage check']
     },
     standard: {
       name: 'Standard',
       price: 50, // Base price in USD
-      wiseLink: 'https://wise.com/pay/r/9BIjpmR3Q1XTuow',
+      payoneerLink: links.standard,
       description: 'Classic & Comfortable',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls']
     },
     premium: {
       name: 'Premium',
       price: 70, // Base price in USD
-      wiseLink: 'https://wise.com/pay/r/3z3m7dxtCGb6A6g',
+      payoneerLink: links.premium,
       description: 'Rugged & Powerful',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
     }
@@ -132,10 +178,10 @@ export default function App() {
     }
   }
 
-  // Proceed to Wise payment link
+  // Proceed to payment link
   const proceedToPayment = () => {
     setCheckoutLoading(true)
-    window.location.href = PRICING_TIERS[selectedTier].wiseLink
+    window.location.href = PRICING_TIERS[selectedTier].payoneerLink
   }
 
   // Close checkout modal

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VinXtract — Admin Setup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --navy: #0a0f1e; --surface: #141c2e; --surface2: #1e2a40;
+      --accent: #3b82f6; --accent2: #60a5fa; --gold: #f59e0b;
+      --border: rgba(59,130,246,0.15); --text: #e2e8f0; --muted: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--navy); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+    h1, h2, h3, label { font-family: 'Syne', sans-serif; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; }
+    .inp {
+      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 15px; padding: 12px 16px; outline: none; transition: border-color 0.2s;
+    }
+    .inp:focus { border-color: var(--accent); }
+    .inp::placeholder { color: var(--muted); }
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #06b6d4); color: #fff;
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      border: none; border-radius: 10px; cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s; box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .grad-text { background: linear-gradient(135deg, #60a5fa, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .tag { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'Syne', sans-serif; }
+    .toast {
+      position: fixed; bottom: 32px; right: 32px;
+      background: #1e2a40; border: 1px solid #3b82f6; border-radius: 12px;
+      padding: 14px 22px; color: #e2e8f0; font-size: 14px; z-index: 9999;
+      transform: translateY(20px); opacity: 0; transition: all 0.3s;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4); font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .section-header { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .status-dot.connected { background: #10b981; box-shadow: 0 0 6px #10b981; }
+    .status-dot.disconnected { background: #ef4444; }
+    .status-dot.checking { background: #f59e0b; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  </style>
+</head>
+<body>
+<div class="min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="hidden md:flex flex-col w-64 p-6" style="background:var(--surface); border-right:1px solid var(--border);">
+    <div class="flex items-center gap-3 mb-10">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#3b82f6,#06b6d4);">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 22V12h6v10" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div class="font-700 text-sm" style="font-family:'Syne',sans-serif; font-weight:800;">Vin<span class="grad-text">Xtract</span></div>
+        <div class="text-xs" style="color:var(--muted);">Admin Setup</div>
+      </div>
+    </div>
+
+    <nav class="space-y-1">
+      <a href="#sheets" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors" style="background:rgba(59,130,246,0.1); color:var(--accent2);">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M3 15h18M9 3v18" stroke="currentColor" stroke-width="2"/></svg>
+        Google Sheets
+      </a>
+      <a href="#payoneer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:text-white transition-colors" style="color:var(--muted);">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M1 10h22" stroke="currentColor" stroke-width="2"/></svg>
+        Payment Links
+      </a>
+      <a href="#emailjs" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:text-white transition-colors" style="color:var(--muted);">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="2"/><polyline points="22,6 12,13 2,6" stroke="currentColor" stroke-width="2"/></svg>
+        EmailJS Config
+      </a>
+      <a href="#preview" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:text-white transition-colors" style="color:var(--muted);">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+        Preview & Save
+      </a>
+    </nav>
+
+    <div class="mt-auto pt-6" style="border-top:1px solid var(--border);">
+      <a href="/" class="flex items-center gap-2 text-sm" style="color:var(--muted);">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Back to Website
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+    <div class="max-w-2xl mx-auto">
+
+      <div class="mb-10">
+        <h1 class="text-3xl font-800 mb-2" style="font-family:'Syne',sans-serif; font-weight:800; letter-spacing:-1px;">Website Setup <span class="grad-text">Panel</span></h1>
+        <p style="color:var(--muted); font-size:15px;">Configure Google Sheets, Payoneer links, and email settings. Changes go live instantly.</p>
+      </div>
+
+      <!-- ══════════════════ GOOGLE SHEETS SETUP ══════════════════ -->
+      <section id="sheets" class="card p-7 mb-6">
+        <div class="section-header">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(16,185,129,0.15);">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#10b981" stroke-width="2"/><path d="M3 9h18M3 15h18M9 3v18" stroke="#10b981" stroke-width="2"/></svg>
+              </div>
+              <div>
+                <h2 class="text-lg" style="font-family:'Syne',sans-serif; font-weight:700;">Google Sheets Integration</h2>
+                <p class="text-sm" style="color:var(--muted);">All config and orders will be stored here</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs" style="color:var(--muted);">
+              <span class="status-dot disconnected" id="sheetStatusDot"></span>
+              <span id="sheetStatusText">Not connected</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step by step guide -->
+        <div class="p-5 rounded-xl mb-5" style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2);">
+          <p class="text-sm mb-3" style="color:#f59e0b; font-family:'Syne',sans-serif; font-weight:700;">📋 Google Apps Script Setup (Only once)</p>
+          <div class="space-y-3">
+            <div class="flex gap-3 items-start">
+              <div class="step-num text-sm">1</div>
+              <p class="text-sm pt-1" style="color:var(--muted);">
+                Go to <a href="https://sheets.new" target="_blank" style="color:var(--accent2);">sheets.new</a> — name it <strong style="color:var(--text);">VinXtract Data</strong>.
+              </p>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div class="step-num text-sm">2</div>
+              <p class="text-sm pt-1" style="color:var(--muted);">
+                Menu: <strong style="color:var(--text);">Extensions → Apps Script</strong>. Delete current code and paste the <strong style="color:var(--text);">Apps Script Code</strong> below.
+              </p>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div class="step-num text-sm">3</div>
+              <p class="text-sm pt-1" style="color:var(--muted);">
+                <strong style="color:var(--text);">Deploy → New Deployment</strong>. Type: <em>Web App</em>. Execute as: <em>Me</em>. Access: <em>Anyone</em>. Copy the URL.
+              </p>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div class="step-num text-sm">4</div>
+              <p class="text-sm pt-1" style="color:var(--muted);">
+                Paste the URL below and click <strong style="color:var(--text);">Test Connection</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Apps Script Code to Copy -->
+        <div class="mb-5">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-sm font-600" style="font-family:'Syne',sans-serif;">Apps Script Code (Copy this)</label>
+            <button onclick="copyScriptCode()" class="text-xs px-3 py-1.5 rounded-lg transition-colors" style="background:rgba(59,130,246,0.15); color:var(--accent2); border:1px solid rgba(59,130,246,0.3);" id="copyScriptBtn">
+              📋 Copy Code
+            </button>
+          </div>
+          <pre id="appsScriptCode" class="text-xs p-4 rounded-xl overflow-x-auto" style="background:rgba(0,0,0,0.4); color:#94a3b8; border:1px solid rgba(255,255,255,0.06); line-height:1.6; white-space:pre-wrap; word-break:break-word;">const SHEET_NAME = 'Config';
+const ORDERS_SHEET = 'Orders';
+
+function doGet(e) {
+  const action = e.parameter.action;
+  
+  if (action === 'getConfig') {
+    return getConfig();
+  }
+  
+  if (action === 'saveConfig') {
+    return saveConfig(e.parameter);
+  }
+  
+  return ContentService
+    .createTextOutput(JSON.stringify({ error: 'Unknown action' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    
+    if (data.action === 'saveConfig') {
+      return saveConfig(data);
+    }
+    
+    if (data.action === 'saveOrder') {
+      return saveOrder(data);
+    }
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    // If JSON fails, try parameter-based for simple actions
+    if (e.parameter.action === 'saveConfig') {
+       return saveConfig(e.parameter);
+    }
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function getConfig() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.getRange('A1:B1').setValues([['Key', 'Value']]);
+  }
+  
+  const data = sheet.getDataRange().getValues();
+  const config = {};
+  
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0]) config[data[i][0]] = data[i][1];
+  }
+  
+  return ContentService
+    .createTextOutput(JSON.stringify(config))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function saveConfig(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.getRange('A1:B1').setValues([['Key', 'Value']]);
+  }
+  
+  const keys = ['payoneerLink_basic', 'payoneerLink_standard', 'payoneerLink_premium', 'emailjsPublicKey', 'emailjsServiceId', 'emailjsTemplateId'];
+  const existing = sheet.getDataRange().getValues();
+  
+  keys.forEach(key => {
+    if (data[key] === undefined || data[key] === null) return;
+    let found = false;
+    for (let i = 1; i < existing.length; i++) {
+      if (existing[i][0] === key) {
+        sheet.getRange(i + 1, 2).setValue(data[key]);
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      sheet.appendRow([key, data[key]]);
+    }
+  });
+  
+  return ContentService
+    .createTextOutput(JSON.stringify({ success: true }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function saveOrder(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(ORDERS_SHEET);
+  
+  if (!sheet) {
+    sheet = ss.insertSheet(ORDERS_SHEET);
+    sheet.getRange('A1:F1').setValues([['Timestamp', 'Plan', 'Price', 'Vehicle Type', 'VIN', 'Email']]);
+  }
+  
+  sheet.appendRow([
+    data.timestamp || new Date().toISOString(),
+    data.plan || '',
+    data.price || '',
+    data.vehicleType || '',
+    data.vin || '',
+    data.email || ''
+  ]);
+  
+  return ContentService
+    .createTextOutput(JSON.stringify({ success: true }))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+        </div>
+
+        <!-- Web App URL Input -->
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-600 mb-2">Apps Script Web App URL <span style="color:#ef4444;">*</span></label>
+            <input type="url" id="appsScriptUrl" class="inp" value="https://script.google.com/macros/s/AKfycbQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec" placeholder="https://script.google.com/macros/s/AKfyc.../exec"/>
+            <p class="text-xs mt-1.5" style="color:var(--muted);">Paste the URL you got after deployment</p>
+          </div>
+          <button onclick="testConnection()" class="btn-primary px-5 py-2.5 text-sm w-full md:w-auto">
+            🔌 Test Connection
+          </button>
+        </div>
+      </section>
+
+      <!-- ══════════════════ PAYONEER ══════════════════ -->
+      <section id="payoneer" class="card p-7 mb-6">
+        <div class="section-header">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(59,130,246,0.15);">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" stroke="#3b82f6" stroke-width="2"/><path d="M1 10h22" stroke="#3b82f6" stroke-width="2"/></svg>
+            </div>
+            <div>
+              <h2 class="text-lg" style="font-family:'Syne',sans-serif; font-weight:700;">Payoneer Payment Links</h2>
+              <p class="text-sm" style="color:var(--muted);">Set separate links for each card</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-600 mb-2">Basic Plan Link <span style="color:#ef4444;">*</span></label>
+            <input type="url" id="payoneerLink_basic" class="inp" placeholder="https://payoneer.com/basic-link"/>
+          </div>
+          <div>
+            <label class="block text-sm font-600 mb-2">Standard Plan Link <span style="color:#ef4444;">*</span></label>
+            <input type="url" id="payoneerLink_standard" class="inp" placeholder="https://payoneer.com/standard-link"/>
+          </div>
+          <div>
+            <label class="block text-sm font-600 mb-2">Premium Plan Link <span style="color:#ef4444;">*</span></label>
+            <input type="url" id="payoneerLink_premium" class="inp" placeholder="https://payoneer.com/premium-link"/>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════ EMAILJS ══════════════════ -->
+      <section id="emailjs" class="card p-7 mb-6">
+        <div class="section-header">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(16,185,129,0.15);">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#10b981" stroke-width="2"/><polyline points="22,6 12,13 2,6" stroke="#10b981" stroke-width="2"/></svg>
+            </div>
+            <div>
+              <h2 class="text-lg" style="font-family:'Syne',sans-serif; font-weight:700;">EmailJS Configuration</h2>
+              <p class="text-sm" style="color:var(--muted);">Order notifications (Optional)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-600 mb-2">Public Key (User ID)</label>
+            <input type="text" id="ejsPublicKey" class="inp" placeholder="e.g. user_AbCdEf..."/>
+          </div>
+          <div>
+            <label class="block text-sm font-600 mb-2">Service ID</label>
+            <input type="text" id="ejsServiceId" class="inp" placeholder="e.g. service_xxxxxxx"/>
+          </div>
+          <div>
+            <label class="block text-sm font-600 mb-2">Template ID</label>
+            <input type="text" id="ejsTemplateId" class="inp" placeholder="e.g. template_xxxxxxx"/>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════ PREVIEW ══════════════════ -->
+      <section id="preview" class="card p-7 mb-6">
+        <div class="section-header">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(139,92,246,0.15);">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="#8b5cf6" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="#8b5cf6" stroke-width="2"/></svg>
+            </div>
+            <div>
+              <h2 class="text-lg" style="font-family:'Syne',sans-serif; font-weight:700;">Current Configuration</h2>
+              <p class="text-sm" style="color:var(--muted);">Loaded from Google Sheets</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="flex justify-between items-center py-2.5 px-4 rounded-lg" style="background:rgba(255,255,255,0.03);">
+            <span class="text-sm" style="color:var(--muted);">Apps Script URL</span>
+            <span class="text-sm font-500" id="prev_sheets" style="color:var(--muted);">Not set</span>
+          </div>
+          <div class="flex justify-between items-center py-2.5 px-4 rounded-lg" style="background:rgba(255,255,255,0.03);">
+            <span class="text-sm" style="color:var(--muted);">Basic Link</span>
+            <span class="text-sm font-500" id="prev_basic" style="color:var(--muted);">Not set</span>
+          </div>
+          <div class="flex justify-between items-center py-2.5 px-4 rounded-lg" style="background:rgba(255,255,255,0.03);">
+            <span class="text-sm" style="color:var(--muted);">Standard Link</span>
+            <span class="text-sm font-500" id="prev_standard" style="color:var(--muted);">Not set</span>
+          </div>
+          <div class="flex justify-between items-center py-2.5 px-4 rounded-lg" style="background:rgba(255,255,255,0.03);">
+            <span class="text-sm" style="color:var(--muted);">Premium Link</span>
+            <span class="text-sm font-500" id="prev_premium" style="color:var(--muted);">Not set</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Save Button -->
+      <button class="btn-primary w-full py-4 text-base" onclick="saveConfig()">
+        💾 Save to Google Sheets
+      </button>
+
+      <div class="mt-4 text-center">
+        <p class="text-xs" style="color:var(--muted);">Config saved to Sheets — Website will automatically update.</p>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
+  const STORAGE_KEY = 'vinxtract_config';
+
+  function loadExisting() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const c = JSON.parse(saved);
+        if (c.appsScriptUrl) document.getElementById('appsScriptUrl').value = c.appsScriptUrl;
+        else document.getElementById('appsScriptUrl').value = APPS_SCRIPT_URL;
+        if (c.payoneerLink_basic) document.getElementById('payoneerLink_basic').value = c.payoneerLink_basic;
+        if (c.payoneerLink_standard) document.getElementById('payoneerLink_standard').value = c.payoneerLink_standard;
+        if (c.payoneerLink_premium) document.getElementById('payoneerLink_premium').value = c.payoneerLink_premium;
+        if (c.emailjsPublicKey) document.getElementById('ejsPublicKey').value = c.emailjsPublicKey;
+        if (c.emailjsServiceId) document.getElementById('ejsServiceId').value = c.emailjsServiceId;
+        if (c.emailjsTemplateId) document.getElementById('ejsTemplateId').value = c.emailjsTemplateId;
+        updatePreview(c);
+      }
+      
+      const defaultUrl = document.getElementById('appsScriptUrl').value.trim() || APPS_SCRIPT_URL;
+      if (defaultUrl) fetchFromSheets(defaultUrl);
+    } catch(e) {}
+  }
+
+  async function fetchFromSheets(url) {
+    setSheetStatus('checking', 'Checking...');
+    try {
+      const res = await fetch(`${url}?action=getConfig`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      if (data.payoneerLink_basic) document.getElementById('payoneerLink_basic').value = data.payoneerLink_basic;
+      if (data.payoneerLink_standard) document.getElementById('payoneerLink_standard').value = data.payoneerLink_standard;
+      if (data.payoneerLink_premium) document.getElementById('payoneerLink_premium').value = data.payoneerLink_premium;
+      if (data.emailjsPublicKey) document.getElementById('ejsPublicKey').value = data.emailjsPublicKey;
+      if (data.emailjsServiceId) document.getElementById('ejsServiceId').value = data.emailjsServiceId;
+      if (data.emailjsTemplateId) document.getElementById('ejsTemplateId').value = data.emailjsTemplateId;
+
+      const currentUrl = document.getElementById('appsScriptUrl').value.trim();
+      updatePreview({ appsScriptUrl: currentUrl, ...data });
+      setSheetStatus('connected', 'Connected ✓');
+    } catch(e) {
+      setSheetStatus('disconnected', 'Not connected');
+    }
+  }
+
+  async function testConnection() {
+    const url = document.getElementById('appsScriptUrl').value.trim();
+    if (!url) return showToast('Enter Apps Script URL first.', 'error');
+
+    setSheetStatus('checking', 'Testing...');
+    showToast('Testing connection...', 'info');
+
+    try {
+      const res = await fetch(`${url}?action=getConfig`);
+      const data = await res.json();
+      setSheetStatus('connected', 'Connected ✓');
+      showToast('✅ Google Sheets connected!', 'success');
+      updatePreview({ appsScriptUrl: url, ...data });
+    } catch(e) {
+      setSheetStatus('disconnected', 'Failed');
+      showToast('❌ Connection failed.', 'error');
+    }
+  }
+
+  async function saveConfig() {
+    const config = {
+      appsScriptUrl: document.getElementById('appsScriptUrl').value.trim(),
+      payoneerLink_basic: document.getElementById('payoneerLink_basic').value.trim(),
+      payoneerLink_standard: document.getElementById('payoneerLink_standard').value.trim(),
+      payoneerLink_premium: document.getElementById('payoneerLink_premium').value.trim(),
+      emailjsPublicKey: document.getElementById('ejsPublicKey').value.trim(),
+      emailjsServiceId: document.getElementById('ejsServiceId').value.trim(),
+      emailjsTemplateId: document.getElementById('ejsTemplateId').value.trim()
+    };
+
+    if (!config.appsScriptUrl) return showToast('Apps Script URL is required.', 'error');
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    showToast('Saving to Google Sheets...', 'info');
+
+    const params = new URLSearchParams({
+      action: 'saveConfig',
+      ...config
+    });
+
+    try {
+      // Using GET for saving is much more reliable for Apps Script CORS bypass
+      const res = await fetch(`${config.appsScriptUrl}?${params.toString()}`);
+      
+      localStorage.setItem('vinxtract_config_url', config.appsScriptUrl);
+      updatePreview(config);
+      showToast('✅ Config saved! Refresh the website to see changes.', 'success');
+      
+      // Verification fetch
+      setTimeout(() => fetchFromSheets(config.appsScriptUrl), 1000);
+    } catch(e) {
+      // Fallback to NO-CORS POST if GET fails
+      await fetch(config.appsScriptUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'saveConfig', ...config })
+      });
+      localStorage.setItem('vinxtract_config_url', config.appsScriptUrl);
+      updatePreview(config);
+      showToast('✅ Saved! If not updating, please check Apps Script permissions.', 'info');
+    }
+  }
+
+  function copyScriptCode() {
+    const code = document.getElementById('appsScriptCode').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.getElementById('copyScriptBtn');
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = '📋 Copy Code', 2000);
+    });
+  }
+
+  function setSheetStatus(state, text) {
+    document.getElementById('sheetStatusDot').className = 'status-dot ' + state;
+    document.getElementById('sheetStatusText').textContent = text;
+  }
+
+  function updatePreview(c) {
+    const trunc = (s) => s ? (s.length > 25 ? s.slice(0, 25) + '...' : s) : 'Not set';
+    document.getElementById('prev_sheets').textContent = trunc(c.appsScriptUrl);
+    document.getElementById('prev_basic').textContent = trunc(c.payoneerLink_basic);
+    document.getElementById('prev_standard').textContent = trunc(c.payoneerLink_standard);
+    document.getElementById('prev_premium').textContent = trunc(c.payoneerLink_premium);
+  }
+
+  let toastTimer;
+  function showToast(msg, type = 'success') {
+    clearTimeout(toastTimer);
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show';
+    t.style.borderColor = type === 'error' ? '#ef4444' : type === 'info' ? '#f59e0b' : '#3b82f6';
+    toastTimer = setTimeout(() => t.className = 'toast', 4000);
+  }
+
+  loadExisting();
+</script>
+</body>
+</html>
