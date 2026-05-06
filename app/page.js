@@ -14,7 +14,7 @@ export default function App() {
   const [vehicleType, setVehicleType] = useState('Car')
   
   // IP Detection & Currency State
-  const [currency, setCurrency] = useState({ symbol: '$', code: 'USD', rate: 1 })
+  const [currency, setCurrency] = useState({ symbol: '£', code: 'GBP', rate: 1 })
 
   useEffect(() => {
     const detectLocation = async () => {
@@ -23,12 +23,11 @@ export default function App() {
         const response = await fetch('https://api.country.is')
         const data = await response.json()
         
-        if (data.country === 'GB') {
-          // Adjust the exchange rate here as needed
-          setCurrency({ symbol: '£', code: 'GBP', rate: 0.79 }) 
-        }
+        // Always set to GBP
+        setCurrency({ symbol: '£', code: 'GBP', rate: 1 }) 
       } catch (error) {
         console.error('Failed to detect IP location:', error)
+        setCurrency({ symbol: '£', code: 'GBP', rate: 1 })
       }
     }
     
@@ -41,11 +40,16 @@ export default function App() {
   }
 
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
+  const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/47537/';
+  const normalizePaymentLink = (link) => {
+    if (!link) return FREEMIUS_LINK;
+    return link.includes('payoneer.com') ? FREEMIUS_LINK : link;
+  };
 
   const [links, setLinks] = useState({
-    basic: 'https://payoneer.com/basic',
-    standard: 'https://payoneer.com/standard',
-    premium: 'https://payoneer.com/premium'
+    basic: FREEMIUS_LINK,
+    standard: FREEMIUS_LINK,
+    premium: FREEMIUS_LINK
   });
 
   // Load config from Google Sheets
@@ -58,9 +62,9 @@ export default function App() {
         
         // Use local fallbacks first
         const initialLinks = {
-          basic: config.payoneerLink_basic || 'https://payoneer.com/basic',
-          standard: config.payoneerLink_standard || 'https://payoneer.com/standard',
-          premium: config.payoneerLink_premium || 'https://payoneer.com/premium'
+          basic: normalizePaymentLink(config.payoneerLink_basic),
+          standard: normalizePaymentLink(config.payoneerLink_standard),
+          premium: normalizePaymentLink(config.payoneerLink_premium)
         };
         setLinks(initialLinks);
 
@@ -71,9 +75,9 @@ export default function App() {
           if (res.ok) {
             const data = await res.json();
             setLinks({
-              basic: data.payoneerLink_basic || initialLinks.basic,
-              standard: data.payoneerLink_standard || initialLinks.standard,
-              premium: data.payoneerLink_premium || initialLinks.premium
+              basic: normalizePaymentLink(data.payoneerLink_basic),
+              standard: normalizePaymentLink(data.payoneerLink_standard),
+              premium: normalizePaymentLink(data.payoneerLink_premium)
             });
             // Also store URL in localStorage for setup.html
             localStorage.setItem('vinxtract_config_url', sheetUrl);
@@ -88,25 +92,11 @@ export default function App() {
 
   // Pricing Tiers Configuration - Vehicle Types
   const PRICING_TIERS = {
-    basic: {
-      name: 'Basic',
-      price: 30, // Base price in USD
-      payoneerLink: links.basic,
-      description: 'Compact & Efficient',
-      features: ['Basic accident history', 'Ownership records', 'Mileage check']
-    },
     standard: {
       name: 'Standard',
-      price: 50, // Base price in USD
+      price: 57, // Price in GBP
       payoneerLink: links.standard,
-      description: 'Classic & Comfortable',
-      features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls']
-    },
-    premium: {
-      name: 'Premium',
-      price: 70, // Base price in USD
-      payoneerLink: links.premium,
-      description: 'Rugged & Powerful',
+      description: 'Complete Vehicle Report',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
     }
   }
@@ -237,70 +227,51 @@ export default function App() {
     setIsSubmitting(true)
 
     const currentTierPrice = Math.round(PRICING_TIERS[selectedTier].price * currency.rate);
+    const savedReport = {
+      vin: vinInput.trim(),
+      email: emailInput.trim(),
+      carModel: carModelInput.trim(),
+      tier: selectedTier,
+      tierName: PRICING_TIERS[selectedTier].name,
+      tierPrice: currentTierPrice,
+      currency: currency.code,
+      currencySymbol: currency.symbol,
+      vehicleType: vehicleType,
+      timestamp: new Date().toISOString()
+    }
+
+    // Store form data immediately and open checkout modal
+    localStorage.setItem('vinReport', JSON.stringify(savedReport))
+    setShowCheckoutModal(true)
 
     try {
-      // Send VIN, email, car model, and pricing tier to backend
       const response = await fetch('/api/send-vin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          vin: vinInput.trim(),
-          email: emailInput.trim(),
-          carModel: carModelInput.trim(),
-          tier: selectedTier,
-          tierName: PRICING_TIERS[selectedTier].name,
-          tierPrice: currentTierPrice,
-          currency: currency.code,
-          vehicleType: vehicleType
-        })
+        body: JSON.stringify(savedReport)
       })
-      
+
       const response2 = await fetch('/api/reminder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          vin: vinInput.trim(),
-          email: emailInput.trim(),
-          carModel: carModelInput.trim(),
-          tier: selectedTier,
-          tierName: PRICING_TIERS[selectedTier].name,
-          tierPrice: currentTierPrice,
-          currency: currency.code,
-          vehicleType: vehicleType
-        })
+        body: JSON.stringify(savedReport)
       })
 
       const result = await response.json()
       const result2 = await response2.json()
 
-      if (result.success && result2.success) {
-        // Store form data in localStorage for the thank you page
-        localStorage.setItem('vinReport', JSON.stringify({
-          vin: vinInput.trim(),
-          email: emailInput.trim(),
-          carModel: carModelInput.trim(),
-          tier: selectedTier,
-          tierName: PRICING_TIERS[selectedTier].name,
-          tierPrice: currentTierPrice,
-          currency: currency.code,
-          currencySymbol: currency.symbol,
-          vehicleType: vehicleType,
-          timestamp: new Date().toISOString()
-        }))
-
-        // Open checkout modal
-        setShowCheckoutModal(true)
-      } else {
-        alert('Error: ' + (result.message || 'Failed to submit request. Please try again.'))
+      if (!result.success) {
+        console.warn('send-vin failed, but checkout modal already opened.', result)
       }
-
+      if (!result2.success) {
+        console.warn('reminder request failed, but checkout modal already opened.', result2)
+      }
     } catch (error) {
-      console.error('Error submitting VIN request:', error)
-      alert('Error: Failed to submit request. Please check your internet connection and try again.')
+      console.error('Background VIN submission failed:', error)
     } finally {
       setIsSubmitting(false)
     }

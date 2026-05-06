@@ -153,7 +153,7 @@ export default function RefundPolicy() {
             <section>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. What Our Service Includes</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                When you purchase a CarCheck vehicle history report for $40, you receive:
+                When you purchase a CarCheck vehicle history report for £57, you receive:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li>Comprehensive vehicle history report based on the VIN provided</li>

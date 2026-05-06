@@ -1,10 +1,19 @@
 import EmailTemplate from '../../components/Email_Template';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 export async function POST(request) {
   const { vin, email, carModel } = await request.json();
+
+  if (!resend) {
+    console.warn('Resend API key is not configured. Skipping reminder email.');
+    return Response.json({
+      success: true,
+      message: 'Reminder email skipped because Resend API key is not configured.'
+    }, { status: 200 });
+  }
 
   try {
     const { data, error } = await resend.emails.send({

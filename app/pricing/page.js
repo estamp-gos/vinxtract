@@ -14,11 +14,16 @@ export default function Pricing() {
   const [loading, setLoading] = useState(false);
 
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
+  const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/47537/';
+  const normalizePaymentLink = (link) => {
+    if (!link) return FREEMIUS_LINK;
+    return link.includes('payoneer.com') ? FREEMIUS_LINK : link;
+  };
 
   const [links, setLinks] = useState({
-    basic: 'https://payoneer.com/basic',
-    standard: 'https://payoneer.com/standard',
-    premium: 'https://payoneer.com/premium'
+    basic: FREEMIUS_LINK,
+    standard: FREEMIUS_LINK,
+    premium: FREEMIUS_LINK
   });
 
   // Load config from Google Sheets
@@ -31,9 +36,9 @@ export default function Pricing() {
         
         // Use local fallbacks first
         const initialLinks = {
-          basic: config.payoneerLink_basic || 'https://payoneer.com/basic',
-          standard: config.payoneerLink_standard || 'https://payoneer.com/standard',
-          premium: config.payoneerLink_premium || 'https://payoneer.com/premium'
+          basic: normalizePaymentLink(config.payoneerLink_basic),
+          standard: normalizePaymentLink(config.payoneerLink_standard),
+          premium: normalizePaymentLink(config.payoneerLink_premium)
         };
         setLinks(initialLinks);
 
@@ -44,9 +49,9 @@ export default function Pricing() {
           if (res.ok) {
             const data = await res.json();
             setLinks({
-              basic: data.payoneerLink_basic || initialLinks.basic,
-              standard: data.payoneerLink_standard || initialLinks.standard,
-              premium: data.payoneerLink_premium || initialLinks.premium
+              basic: normalizePaymentLink(data.payoneerLink_basic),
+              standard: normalizePaymentLink(data.payoneerLink_standard),
+              premium: normalizePaymentLink(data.payoneerLink_premium)
             });
             // Also store URL in localStorage for setup.html
             localStorage.setItem('vinxtract_config_url', sheetUrl);
@@ -61,28 +66,12 @@ export default function Pricing() {
 
   // Pricing Tiers Configuration - Vehicle Types
   const PRICING_TIERS = {
-    basic: {
-      name: 'Basic',
-      price: 30,
-      priceId: 'pri_01k8bkwee1djsx23kqk4c3qjgb',
-      payoneerLink: links.basic,
-      description: 'Compact & Efficient',
-      features: ['Basic accident history', 'Ownership records', 'Mileage check']
-    },
     standard: {
       name: 'Standard',
-      price: 50,
+      price: 57,
       priceId: 'pri_01k8bm1n7k6kdkb62d0e5r1nha',
       payoneerLink: links.standard,
-      description: 'Classic & Comfortable',
-      features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls']
-    },
-    premium: {
-      name: 'Premium',
-      price: 70,
-      priceId: 'pri_01k8bm2ygfy97ehkedx0361ynh',
-      payoneerLink: links.premium,
-      description: 'Rugged & Powerful',
+      description: 'Complete Vehicle Report',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
     }
   }
@@ -347,11 +336,9 @@ export default function Pricing() {
                     : 'bg-white hover:shadow-xl'
                 }`}
               >
-                {key === 'premium' && (
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center py-2">
-                    <span className="font-semibold text-sm">MOST POPULAR</span>
-                  </div>
-                )}
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center py-2">
+                  <span className="font-semibold text-sm">COMPREHENSIVE REPORT</span>
+                </div>
                 
                 <div className="p-8 text-center">
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{tier.name}</h3>
@@ -359,7 +346,7 @@ export default function Pricing() {
                   
                   <div className="mb-8">
                     <div className="flex items-center justify-center mb-2">
-                      <span className="text-5xl font-bold text-blue-600">${tier.price}</span>
+                      <span className="text-5xl font-bold text-blue-600">£{tier.price}</span>
                     </div>
                     <p className="text-gray-600 text-sm">One-time payment</p>
                   </div>
@@ -396,68 +383,6 @@ export default function Pricing() {
             ))}
           </div>
 
-          {/* Comparison */}
-          <div className="bg-gray-50 rounded-lg p-8 mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
-              How They Compare
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b-2 border-gray-300">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Feature</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Basic</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Standard</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-900">Premium</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-3 px-4 text-gray-900">Accident History</td>
-                    <td className="text-center py-3 px-4">Basic</td>
-                    <td className="text-center py-3 px-4">✓ Full</td>
-                    <td className="text-center py-3 px-4">✓ Full</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-3 px-4 text-gray-900">Ownership Records</td>
-                    <td className="text-center py-3 px-4">✓</td>
-                    <td className="text-center py-3 px-4">✓ Complete</td>
-                    <td className="text-center py-3 px-4">✓ Complete</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-3 px-4 text-gray-900">Mileage Verification</td>
-                    <td className="text-center py-3 px-4">✓</td>
-                    <td className="text-center py-3 px-4">✓</td>
-                    <td className="text-center py-3 px-4">✓</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-3 px-4 text-gray-900">Title Information</td>
-                    <td className="text-center py-3 px-4">-</td>
-                    <td className="text-center py-3 px-4">✓</td>
-                    <td className="text-center py-3 px-4">✓</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-3 px-4 text-gray-900">Safety Recalls</td>
-                    <td className="text-center py-3 px-4">-</td>
-                    <td className="text-center py-3 px-4">✓</td>
-                    <td className="text-center py-3 px-4">✓</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-3 px-4 text-gray-900">Market Value Analysis</td>
-                    <td className="text-center py-3 px-4">-</td>
-                    <td className="text-center py-3 px-4">-</td>
-                    <td className="text-center py-3 px-4">✓</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 px-4 text-gray-900">Detailed Damage Assessment</td>
-                    <td className="text-center py-3 px-4">-</td>
-                    <td className="text-center py-3 px-4">-</td>
-                    <td className="text-center py-3 px-4">✓</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -615,12 +540,12 @@ export default function Pricing() {
           <div className="space-y-6">
             {[
               {
-                question: "What's the difference between the three tiers?",
-                answer: "Basic ($30) includes essential information like accident history, ownership records, and mileage checks. Standard ($50) adds complete title information and safety recalls. Premium ($70) includes everything plus market value analysis and detailed damage assessment."
+                question: "What does the Standard report include?",
+                answer: "Our comprehensive £57 report includes full accident history, complete ownership records, mileage verification, title information, safety recalls, market value analysis, and detailed damage assessment - everything you need for informed vehicle purchasing decisions."
               },
               {
-                question: "Which tier should I choose?",
-                answer: "Choose Basic if you just need essential information. Choose Standard for a complete overview (most popular). Choose Premium if you're considering a purchase and want comprehensive analysis including market value and detailed damage assessment."
+                question: "Why choose VinXtract?",
+                answer: "We provide the most comprehensive vehicle history reports available, combining data from multiple trusted sources. Our reports are delivered quickly (usually within 1-2 hours) and include detailed analysis that helps you make confident buying decisions. Plus, we offer a money-back guarantee if you're not satisfied."
               },
               {
                 question: "Are there any hidden fees or recurring charges?",
@@ -663,14 +588,14 @@ export default function Pricing() {
               onClick={openModal}
               className="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-lg inline-block"
             >
-              Get Started - From ${PRICING_TIERS.basic.price}
+              Get Started - £{PRICING_TIERS.standard.price}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div className="text-center">
-              <div className="font-semibold text-white">Three pricing options</div>
-              <div className="text-blue-100">$30 - $70 per report</div>
+              <div className="font-semibold text-white">Single pricing option</div>
+              <div className="text-blue-100">£57 per report</div>
             </div>
             <div className="text-center">
               <div className="font-semibold text-white">Fast delivery: 6-12 hours</div>
