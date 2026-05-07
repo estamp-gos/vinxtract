@@ -10,6 +10,7 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [selectedTier, setSelectedTier] = useState('standard')
   const [vehicleType, setVehicleType] = useState('Car')
   
@@ -178,6 +179,7 @@ export default function App() {
   const closeCheckoutModal = () => {
     setShowCheckoutModal(false)
     setCheckoutLoading(false)
+    setAcceptedTerms(false)
   }
 
   const currentDate = new Date();
@@ -242,6 +244,7 @@ export default function App() {
 
     // Store form data immediately and open checkout modal
     localStorage.setItem('vinReport', JSON.stringify(savedReport))
+    setAcceptedTerms(false)
     setShowCheckoutModal(true)
 
     try {
@@ -2018,11 +2021,32 @@ export default function App() {
               Click below to proceed to secure payment. Your vehicle history report ({PRICING_TIERS[selectedTier].name} tier) will be delivered to your email within 6-12 hours (usually 1-2 hours).
             </p>
 
+            <p style={{ marginBottom: '15px', color: '#111827', fontSize: '14px', fontWeight: '600' }}>
+              I CONFIRM THAT I AM VOLUNTARILY PURCHASING A VEHICLE INSPECTION REPORT FROM VINXTRACT. THE REPORT WILL BE DELIVERED WITHIN THE STATED TIMEFRAME, AND ONCE DELIVERED, IT IS NON-REFUNDABLE.
+            </p>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '20px', fontSize: '14px', color: '#374151' }}>
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                style={{ width: '18px', height: '18px', marginTop: '2px' }}
+              />
+              <span>
+                I have read and agree to the purchase confirmation above.
+              </span>
+            </label>
+
             {!checkoutLoading ? (
               <>
                 <button
                   onClick={proceedToPayment}
-                  style={modalStyles.proceedButton}
+                  style={{
+                    ...modalStyles.proceedButton,
+                    opacity: acceptedTerms ? 1 : 0.6,
+                    cursor: acceptedTerms ? 'pointer' : 'not-allowed'
+                  }}
+                  disabled={!acceptedTerms}
                 >
                   Proceed to Payment - {formatPrice(PRICING_TIERS[selectedTier].price)}
                 </button>
