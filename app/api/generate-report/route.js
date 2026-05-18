@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
-import { pathToFileURL } from 'url'
-import { resolveChromeExecutable } from '@/lib/chromePath'
+import chromium from '@sparticuz/chromium'
+import puppeteer from 'puppeteer-core'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -185,7 +185,11 @@ export async function POST(request) {
   html = stripTrailingScript(html)
   html = applyPlaceholders(html, placeholders)
 
-  const executablePath = resolveChromeExecutable()
+  const executablePath =
+    process.env.PUPPETEER_EXECUTABLE_PATH ||
+    process.env.CHROME_PATH ||
+    chromium.executablePath()
+
   if (!executablePath) {
     return NextResponse.json(
       {
@@ -197,10 +201,7 @@ export async function POST(request) {
     )
   }
 
-  const puppeteerMod = await import('puppeteer')
-  const puppeteer = puppeteerMod.default
-
-  /** @type {import('puppeteer').Browser} */
+  /** @type {import('puppeteer-core').Browser} */
   let browser
   try {
     browser = await puppeteer.launch({
