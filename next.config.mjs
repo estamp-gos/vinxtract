@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['puppeteer', 'puppeteer-core', '@sparticuz/chromium'],
+
   // Enable compression for better performance
   compress: true,
   

@@ -1,11 +1,47 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
+import { useVehicle } from '@/lib/vehicleContext'
 
 export default function App() {
-  const [vinInput, setVinInput] = useState('')
-  const [emailInput, setEmailInput] = useState('')
-  const [carModelInput, setCarModelInput] = useState('')
+  const {
+    registration,
+    setRegistration,
+    year,
+    setYear,
+    vehicleModel,
+    setVehicleModel,
+    email,
+    setEmail,
+    enrichment,
+    lookupLoading,
+    lookupError,
+    runLookup,
+  } = useVehicle()
+
+  const vinInput = registration
+  const emailInput = email
+  const carModelInput = vehicleModel
+
+  const lookupDebounceRef = useRef(null)
+
+  const queueLookupDebounced = () => {
+    if (lookupDebounceRef.current) {
+      clearTimeout(lookupDebounceRef.current)
+    }
+    lookupDebounceRef.current = setTimeout(() => {
+      runLookup()
+    }, 500)
+  }
+
+  const handleLookupClick = async (e) => {
+    if (e?.preventDefault) e.preventDefault()
+    if (lookupDebounceRef.current) {
+      clearTimeout(lookupDebounceRef.current)
+      lookupDebounceRef.current = null
+    }
+    await runLookup()
+  }
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
@@ -41,7 +77,7 @@ export default function App() {
   }
 
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
-  const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/47537/';
+  const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/45983/?sandbox=true';
   const normalizePaymentLink = (link) => {
     if (!link) return FREEMIUS_LINK;
     return link.includes('payoneer.com') ? FREEMIUS_LINK : link;
@@ -172,7 +208,15 @@ export default function App() {
   // Proceed to payment link
   const proceedToPayment = () => {
     setCheckoutLoading(true)
-    window.location.href = PRICING_TIERS[selectedTier].payoneerLink
+    try {
+      const link = PRICING_TIERS[selectedTier].payoneerLink || ''
+      const returnUrl = encodeURIComponent(window.location.origin + '/thankyou')
+      const sep = link.includes('?') ? '&' : '?'
+      // Try both return_url and return parameters for Freemius
+      window.location.href = link + sep + 'return_url=' + returnUrl + '&return=' + returnUrl
+    } catch (e) {
+      window.location.href = PRICING_TIERS[selectedTier].payoneerLink
+    }
   }
 
   // Close checkout modal
@@ -212,12 +256,17 @@ export default function App() {
     e.preventDefault()
 
     if (!vinInput.trim()) {
-      alert('Please enter a VIN number')
+      alert('Please enter a REG number')
       return
     }
 
     if (!emailInput.trim() || !emailInput.includes('@')) {
       alert('Please enter a valid email address')
+      return
+    }
+
+    if (!year.trim()) {
+      alert('Please enter the vehicle year')
       return
     }
 
@@ -233,6 +282,8 @@ export default function App() {
       vin: vinInput.trim(),
       email: emailInput.trim(),
       carModel: carModelInput.trim(),
+      year: year.trim(),
+      enrichment: enrichment ?? null,
       tier: selectedTier,
       tierName: PRICING_TIERS[selectedTier].name,
       tierPrice: currentTierPrice,
@@ -283,7 +334,7 @@ export default function App() {
   // Function to validate VIN input
   const handleVinChange = (e) => {
     const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')
-    setVinInput(value)
+    setRegistration(value)
   }
 
   return (
@@ -433,7 +484,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* VIN Input Form */}
+              {/* REG input form */}
               <div id="vin-input-section" className="max-w-2xl mx-auto lg:mx-0 bg-white p-8 rounded-2xl shadow-2xl border-2 border-blue-500 animate-scaleIn delay-400">
                 <div className="mb-6 text-center">
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Get Your Report in 3 Steps</h3>
@@ -478,14 +529,15 @@ export default function App() {
                     </div>
                     <div className="flex-1">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        1. Enter VIN Number
+                        1. Enter REG Number
                       </label>
                       <input
                         id="vin-input-field"
                         type="text"
-                        placeholder="Enter 17-digit VIN"
+                        placeholder="Enter your REG number"
                         value={vinInput}
                         onChange={handleVinChange}
+                        onBlur={queueLookupDebounced}
                         maxLength="17"
                         className="w-full text-gray-700 px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg font-semibold transition-all hover:border-blue-300"
                         required
@@ -506,6 +558,24 @@ export default function App() {
                     </div>
                   </div>
 
+                    <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Vehicle model year
+                    </label>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="e.g., 2016"
+                      value={year}
+                      onChange={(e) => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                      onBlur={queueLookupDebounced}
+                      className="w-full text-gray-700 px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg font-semibold transition-all hover:border-blue-300"
+                      min="1950"
+                      max="2030"
+                      required
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       2. Your Email Address
@@ -514,7 +584,7 @@ export default function App() {
                       type="email"
                       placeholder="you@example.com"
                       value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="w-full text-gray-700 px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg transition-all hover:border-blue-300"
                       required
                     />
@@ -535,7 +605,8 @@ export default function App() {
                       type="text"
                       placeholder="e.g., Honda Civic, BMW X5, Toyota Camry"
                       value={carModelInput}
-                      onChange={(e) => setCarModelInput(e.target.value)}
+                      onChange={(e) => setVehicleModel(e.target.value)}
+                      onBlur={queueLookupDebounced}
                       className="w-full text-gray-700 px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg transition-all hover:border-blue-300"
                       required
                     />
@@ -544,9 +615,58 @@ export default function App() {
                     </div>
                   </div>
 
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleLookupClick}
+                      disabled={lookupLoading}
+                      className="inline-flex items-center rounded-lg border-2 border-blue-600 px-5 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {lookupLoading ? (
+                        <span className="flex items-center gap-2">
+                          <svg
+                            className="h-4 w-4 animate-spin"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                          Looking up...
+                        </span>
+                      ) : (
+                        'Lookup vehicle details'
+                      )}
+                    </button>
+                    <span className="text-xs text-gray-500">
+                      Auto-fills specs from registration, year, and model via AI lookup
+                    </span>
+                  </div>
+                  {lookupError ? (
+                    <p className="text-sm text-red-600">{lookupError}</p>
+                  ) : null}
+
                   <button
                     type="submit"
-                    disabled={!vinInput.trim() || !emailInput.trim() || !carModelInput.trim() || isSubmitting}
+                    disabled={
+                      !vinInput.trim() ||
+                      !year.trim() ||
+                      !emailInput.trim() ||
+                      !carModelInput.trim() ||
+                      isSubmitting
+                    }
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-5 rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all font-bold text-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:translate-y-0 relative overflow-hidden group"
                   >
                     <span className="relative z-10">
@@ -592,6 +712,8 @@ export default function App() {
                     </div>
                   </div>
                 </form>
+
+              
 
                 <div className="mt-6 text-left">
                   <h3 className="font-semibold text-gray-900 mb-3">We check:</h3>
@@ -1006,7 +1128,7 @@ export default function App() {
             VinXtract - Complete Car History Reports
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Avoid unexpected costs and problems with our comprehensive vehicle history reports. Enter your VIN now and get a full car report delivered to your email from VinXtract.
+            Avoid unexpected costs and problems with our comprehensive vehicle history reports. Enter your REG now and get a full car report delivered to your email from VinXtract.
           </p>
 
           <div className="bg-white p-8 rounded-2xl shadow-lg">
@@ -1046,15 +1168,31 @@ export default function App() {
               <div>
                 <input
                   type="text"
-                  placeholder="Enter VIN number"
+                  placeholder="Enter REG number"
                   value={vinInput}
                   onChange={handleVinChange}
+                  onBlur={queueLookupDebounced}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg"
                   required
                 />
                 <div className="mt-2 text-sm text-gray-600">
-                  VIN number entered
+                  REG number entered
                 </div>
+              </div>
+
+              <div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Vehicle year"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  onBlur={queueLookupDebounced}
+                  min="1950"
+                  max="2030"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg"
+                  required
+                />
               </div>
 
               <div>
@@ -1062,7 +1200,7 @@ export default function App() {
                   type="email"
                   placeholder="Enter your email address"
                   value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg"
                   required
                 />
@@ -1076,7 +1214,8 @@ export default function App() {
                   type="text"
                   placeholder="Enter car model (e.g., Honda Civic, BMW X5, Toyota Camry)"
                   value={carModelInput}
-                  onChange={(e) => setCarModelInput(e.target.value)}
+                  onChange={(e) => setVehicleModel(e.target.value)}
+                  onBlur={queueLookupDebounced}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg"
                   required
                 />
@@ -1087,7 +1226,13 @@ export default function App() {
 
               <button
                 type="submit"
-                disabled={!vinInput.trim() || !emailInput.trim() || !carModelInput.trim() || isSubmitting}
+                disabled={
+                  !vinInput.trim() ||
+                  !year.trim() ||
+                  !emailInput.trim() ||
+                  !carModelInput.trim() ||
+                  isSubmitting
+                }
                 className="w-full bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold text-lg"
               >
                 {isSubmitting ? 'Submitting...' : `Get ${PRICING_TIERS[selectedTier].name} Report`}
@@ -2004,8 +2149,16 @@ export default function App() {
             
             <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f3f4f6', borderRadius: '8px' }}>
               <p style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
-                <strong>VIN:</strong> {vinInput}
+                <strong>REG:</strong> {vinInput}
               </p>
+              <p style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
+                <strong>Year:</strong> {year}
+              </p>
+              {enrichment ? (
+                <p style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
+                  <strong>Preview:</strong> {enrichment.make} {enrichment.model} · {enrichment.engine}
+                </p>
+              ) : null}
               <p style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
                 <strong>Email:</strong> {emailInput}
               </p>

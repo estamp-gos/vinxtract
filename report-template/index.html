@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VinXtract Vehicle History Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --teal: #3a9aab;
+    --teal-light: #5ab8c8;
+    --dark: #2c2c2c;
+    --mid: #555;
+    --light-gray: #f5f5f5;
+    --border: #e0e0e0;
+    --text: #333;
+    --label: #888;
+    --white: #fff;
+  }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: #eee;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  /* ── CONTROLS (screen only) ── */
+  #controls {
+    background: #1a1a2e;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  #controls h2 { color: #fff; font-size: 15px; font-weight: 600; flex: 1; }
+  #controls button {
+    background: var(--teal);
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: .5px;
+  }
+  #controls button:hover { background: var(--teal-light); }
+  #controls button.secondary {
+    background: transparent;
+    border: 1.5px solid #555;
+    color: #ccc;
+  }
+  #controls button.secondary:hover { border-color: var(--teal); color: var(--teal); }
+
+  /* ── PAGE WRAPPER ── */
+  .page-wrap {
+    background: var(--white);
+    width: 960px;
+    margin: 24px auto;
+    box-shadow: 0 4px 24px rgba(0,0,0,.15);
+  }
+
+  /* ── HEADER ── */
+  .report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 28px 36px 20px;
+    border-bottom: 2px solid var(--border);
+  }
+  .logo-area { display: flex; align-items: center; gap: 14px; }
+  .logo-icon img{
+    width: 56px; height: 56px;
+    /* background: var(--teal); */
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .logo-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 39px;
+    font-weight: 700;
+    color: var(--teal);
+    letter-spacing: 1px;
+  }
+  .logo-text span { color: var(--dark); }
+  .header-right { text-align: right; }
+  .header-right h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--dark);
+    letter-spacing: .5px;
+  }
+  .header-right .vin-line {
+    font-size: 13px;
+    color: var(--mid);
+    margin-top: 4px;
+  }
+  .header-right .vin-line strong { color: var(--dark); }
+  .header-right .report-date { font-size: 12px; color: var(--label); margin-top: 18px; }
+
+  .vehicle-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    background: #121212;
+    color: #fff;
+    padding: 24px 36px;
+    border-bottom: 1px solid #2d2d2d;
+  }
+  .vehicle-banner .banner-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .vehicle-banner .banner-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: #1f1f1f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .vehicle-banner .banner-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .vehicle-banner .banner-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .vehicle-banner .banner-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: .2px;
+    line-height: 1.1;
+  }
+  .vehicle-banner .banner-sub {
+    font-size: 12px;
+    color: #b4b4b4;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .vehicle-banner .banner-right { text-align: right; }
+  .vehicle-banner .registration-box {
+    display: inline-block;
+    background: #f4bb2d;
+    color: #111;
+    padding: 14px 22px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    min-width: 150px;
+  }
+  .vehicle-banner .registration-label {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #8d8d8d;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  @media screen and (max-width: 820px) {
+    .vehicle-banner { flex-direction: column; align-items: flex-start; }
+    .vehicle-banner .banner-right { text-align: left; width: 100%; }
+  }
+
+  /* ── SECTIONS ── */
+  .section { padding: 28px 36px; border-bottom: 1px solid var(--border); }
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--dark);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .section-title .source-tag {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--label);
+    letter-spacing: 2px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+
+  /* ── OVERVIEW CARDS ── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .overview-card {
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 14px;
+    text-align: center;
+  }
+  .overview-card .card-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--label);
+    margin-bottom: 8px;
+  }
+  .overview-card .card-count {
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--teal);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .overview-card .card-sub {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--label);
+  }
+
+  /* ── STANDARD INFO GRID ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .info-col { display: flex; flex-direction: column; }
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .lbl {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--label);
+  }
+  .info-row .val {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark);
+    text-align: right;
+  }
+  .info-divider { width: 1.5px; background: var(--border); }
+
+  /* ── HISTORY BOX ── */
+  .history-box {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 18px;
+    color: var(--mid);
+    font-size: 13px;
+    background: var(--light-gray);
+  }
+
+  /* ── JUNK/SALVAGE DESCRIPTION ── */
+  .section-desc {
+    font-size: 12px;
+    color: var(--mid);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  /* ── TABLE ── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .data-table thead tr { background: var(--light-gray); }
+  .data-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--label);
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--mid);
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .no-data { padding: 14px; color: var(--mid); font-size: 12px; font-style: italic; }
+
+  /* ── TITLE SECTIONS ── */
+  .title-block { margin-bottom: 20px; }
+  .title-block-header {
+    background: var(--light-gray);
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--mid);
+    border: 1px solid var(--border);
+    border-bottom: none;
+  }
+  .title-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .title-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--label);
+    border-bottom: 1px solid var(--border);
+    background: #fafafa;
+  }
+  .title-table td {
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--dark);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .title-table tr:last-child td { border-bottom: none; }
+  .additional-link {
+    font-size: 11px;
+    color: var(--teal);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  /* ── BRAND ROW ── */
+  .brand-grid { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .brand-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand-row:last-child { border-bottom: none; }
+  .brand-info { flex: 1; }
+  .brand-name {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--dark);
+    margin-bottom: 5px;
+  }
+  .brand-desc { font-size: 11px; color: var(--mid); line-height: 1.55; max-width: 520px; }
+  .brand-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    padding-top: 2px;
+    min-width: 170px;
+    justify-content: flex-end;
+  }
+  .check-circle {
+    width: 26px; height: 26px;
+    border: 2px solid var(--teal);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--teal);
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .brand-status-text {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--mid);
+  }
+
+  /* ── GLOSSARY ── */
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 36px; }
+  .glossary-item { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .glossary-item .g-term {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 3px;
+  }
+  .glossary-item .g-def { font-size: 12px; color: var(--mid); line-height: 1.5; }
+
+  .status-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 18px;
+    align-items: start;
+  }
+  .status-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .status-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .status-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #ebf5ff;
+    color: #1378a8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .status-heading .heading-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .status-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark);
+    text-transform: none;
+  }
+  .status-sub {
+    font-size: 11px;
+    color: var(--mid);
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .status-box {
+    border: 1.5px solid #c7efd2;
+    border-radius: 10px;
+    background: #eaf9ef;
+    color: #1f5f2a;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .status-marker {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #2f7f3f;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .status-image {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .status-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+  }
+  @media screen and (max-width: 860px) {
+    .status-summary { grid-template-columns: 1fr; }
+  }
+
+  /* ── VinXtract BOX ── */
+  .VinXtract-box {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    padding: 20px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--light-gray);
+  }
+  .VinXtract-logo {
+    width: 80px; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .VinXtract-badge {
+    background: #003087;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 6px 10px;
+    text-align: center;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+  .VinXtract-sub { font-size: 9px; color: var(--mid); text-align: center; line-height: 1.4; }
+  .VinXtract-text { font-size: 12px; color: var(--mid); line-height: 1.7; }
+  .VinXtract-text h4 { font-size: 13px; color: var(--dark); margin-bottom: 8px; font-weight: 700; }
+
+  /* ── FOOTER ── */
+  .report-footer {
+    background: var(--dark);
+    color: #aaa;
+    text-align: center;
+    padding: 16px;
+    font-size: 11px;
+    letter-spacing: .5px;
+  }
+
+  /* ── TITLE BRAND IMAGES SECTION ── */
+  .title-brand-list .title-brand-images img {
+    width: 100%;
+    display: block;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+  }
+  @media print {
+    .title-brand-list .title-brand-images img { page-break-inside: avoid; }
+  }
+
+  /* ── EDIT MODAL ── */
+  #editModal {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 1000;
+    overflow-y: auto;
+  }
+  .modal-inner {
+    background: #fff;
+    width: 680px;
+    margin: 40px auto;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(0,0,0,.3);
+  }
+  .modal-header {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-header h3 { font-size: 16px; font-weight: 700; }
+  .modal-header button { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
+  .modal-body { padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  .field-group.full { grid-column: 1 / -1; }
+  .field-group label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--label); }
+  .field-group input, .field-group select {
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: 'Barlow', sans-serif;
+    color: var(--dark);
+    outline: none;
+    transition: border-color .2s;
+  }
+  .field-group input:focus, .field-group select:focus { border-color: var(--teal); }
+  .modal-footer {
+    padding: 16px 24px;
+    background: var(--light-gray);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .modal-footer button {
+    padding: 9px 22px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+  }
+  .btn-apply { background: var(--teal); color: #fff; }
+  .btn-cancel { background: #ddd; color: var(--dark); }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    @page { size: A4; margin: 0; }
+    body {
+      background: #fff;
+      font-size: 11px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    #controls, #editModal { display: none !important; }
+    .page-wrap { width: 100%; margin: 0; box-shadow: none; }
+    .vehicle-banner {
+      background: #121212 !important;
+      color: #fff !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .vehicle-banner .registration-box {
+      background: #f4bb2d !important;
+      color: #111 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .title-block-header,
+    .data-table thead tr,
+    .title-table th,
+    .VinXtract-badge,
+    .history-box {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .brand-desc { max-width: 400px; }
+    .overview-card .card-count { font-size: 32px; }
+    .section { padding: 18px 28px; }
+    .brand-row { padding: 12px 16px; }
+
+    /* Page breaks */
+    .page-break-after { page-break-after: always; break-after: page; }
+    .section { page-break-inside: avoid; }
+    .brand-row { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+
+<!-- ═══════════════════════════════════════════
+     REPORT DOCUMENT
+════════════════════════════════════════════ -->
+<div class="page-wrap">
+
+  <!-- Header -->
+  <div class="report-header">
+    <div class="logo-area">
+      <div class="logo-icon">
+        <img src="{{LOGO_SRC}}" alt="Car Logo">
+      </div>
+      <div>
+        <div class="logo-text">Vin<span>Xtract</span></div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="report-date">Report Generated: <span id="h_date">{{REPORT_DATE}}</span></div>
+    </div>
+  </div>
+
+  <div class="vehicle-banner">
+    <div class="banner-left">
+      <div class="banner-copy">
+        <div class="banner-title" id="banner_title">{{BANNER_TITLE}}</div>
+      </div>
+    </div>
+    <div class="banner-right">
+      <div class="registration-box" id="banner_reg">{{REG}}</div>
+      <div class="registration-label">Registration Number</div>
+    </div>
+  </div>
+
+  <!-- PAGE 1: REPORT OVERVIEW -->
+  <div class="section">
+    <div class="section-title">Report Overview</div>
+    <div class="overview-grid">
+      <div class="overview-card">
+        <div class="card-label">Junk &amp; Salvage Info</div>
+        <div class="card-count" id="ov_junk">0</div>
+        <div class="card-sub">Records</div>
+      </div>
+      <div class="overview-card">
+        <div class="card-label">Insurance Info</div>
+        <div class="card-count" id="ov_ins">0</div>
+        <div class="card-sub">Records</div>
+      </div>
+      <div class="overview-card">
+        <div class="card-label">Title History</div>
+        <div class="card-count" id="ov_title">2</div>
+        <div class="card-sub">Records</div>
+      </div>
+      <div class="overview-card">
+        <div class="card-label">Title Brands</div>
+        <div class="card-count" id="ov_brands">0</div>
+        <div class="card-sub">Records</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STANDARD INFORMATION -->
+  <div class="section">
+    <div class="section-title">Standard Information</div>
+    <div class="info-grid">
+      <div class="info-col">
+        <div class="info-row"><span class="lbl">REG</span><span class="val" id="si_vin">{{REG}}</span></div>
+        <div class="info-row"><span class="lbl">Year</span><span class="val" id="si_year">{{YEAR}}</span></div>
+        <div class="info-row"><span class="lbl">Make</span><span class="val" id="si_make">{{MAKE}}</span></div>
+        <div class="info-row"><span class="lbl">Model</span><span class="val" id="si_model">{{MODEL}}</span></div>
+        <div class="info-row"><span class="lbl">Body Style</span><span class="val" id="si_body">{{BODY_STYLE}}</span></div>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-col">
+        <div class="info-row"><span class="lbl">Engine</span><span class="val" id="si_engine">{{ENGINE}}</span></div>
+        <div class="info-row"><span class="lbl">Transmission</span><span class="val" id="si_trans">{{TRANSMISSION}}</span></div>
+        <div class="info-row"><span class="lbl">Fuel Type</span><span class="val" id="si_fuel">{{FUEL_TYPE}}</span></div>
+        <div class="info-row"><span class="lbl">Doors</span><span class="val" id="si_doors">{{DOORS}}</span></div>
+        <div class="info-row"><span class="lbl">Drive Train</span><span class="val" id="si_drive">{{DRIVE_TRAIN}}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONLINE HISTORY -->
+  <div class="section page-break-after">
+    <div class="section-title">Online History <span class="source-tag">SOURCE: VINXTRACT.COM</span></div>
+    <div class="history-box" id="si_history">History not available</div>
+  </div>
+
+  <!-- PAGE 2: JUNK / SALVAGE -->
+  <div class="section">
+    <div class="section-title">Junk/Salvage Information</div>
+    <p class="section-desc">If this VIN has a record in the Junk/Salvage or Insurance information then the business that submitted the VIN to VinXtract deemed the vehicle to be either a junk, salvage, or in the case of an insurer, a total loss. The information in the DISPOSITION field in the Junk/Salvage section denotes what has happened to the VIN (i.e., vehicle) since it came into the possession of the business.</p>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date Obtained</th>
+          <th>Entity</th>
+          <th>Vehicle Disposition</th>
+          <th>Category</th>
+          <th>Intended For Export</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5" class="no-data">No Junk/Salvage Reportings Found</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- INSURANCE RECORDS -->
+  <div class="section">
+    <div class="section-title">Insurance Records</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date of Total Loss Declaration or Date Total Loss Claim Paid</th>
+          <th>Entity</th>
+          <th>Category</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="3" class="no-data">No Total Loss Reportings Found</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TITLE INFORMATION -->
+  <div class="section page-break-after">
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Title Information</span>
+      <span class="additional-link" style="font-family:'Barlow',sans-serif;font-size:11px;">IF YOU WOULD LIKE TO OBTAIN ADDITIONAL TITLE INFORMATION FROM THE STATE OF TITLE – PLEASE CLICK HERE</span>
+    </div>
+
+    <!-- Current Title -->
+    <div class="title-block">
+      <div class="title-block-header">Current Title Information</div>
+      <table class="title-table">
+        <thead>
+          <tr>
+            <th>Title Issue Date</th>
+            <th>State</th>
+            <th>Mileage</th>
+            <th>Event</th>
+          </tr>
+        </thead>
+        <tbody id="current_title_tbody">
+          <tr>
+            <td id="ct_date">N/A</td>
+            <td id="ct_state">UK</td>
+            <td id="ct_mile">EXEMPT</td>
+            <td id="ct_event">Title</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Historical Title -->
+    <div class="title-block">
+      <div class="title-block-header">Historical Title Information</div>
+      <table class="title-table">
+        <thead>
+          <tr>
+            <th>Title Issue Date</th>
+            <th>State</th>
+            <th>Mileage</th>
+            <th>Event</th>
+          </tr>
+        </thead>
+        <tbody id="hist_title_tbody">
+          <tr>
+            <td id="ht1_date">N/A</td>
+            <td id="ht1_state">UK</td>
+            <td id="ht1_mile">EXEMPT</td>
+            <td id="ht1_event">Title</td>
+          </tr>
+          <tr>
+            <td id="ht2_date">N/A</td>
+            <td id="ht2_state">UK</td>
+            <td id="ht2_mile">EXEMPT</td>
+            <td id="ht2_event">Title</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAGE 3+: TITLE BRAND INFORMATION -->
+  <div class="section">
+    <div class="section-title">Title Brand Information</div>
+    <p class="section-desc">Brands are labels used to describe the status of a motor vehicle, such as "junk", "salvage", or "flood." Statuses from states are mapped to VinXtract brands for consistency within the system.</p>
+    <div class="title-brand-list">
+      <p class="section-desc" style="margin:6px 0 12px;color:var(--mid);font-size:12px;line-height:1.5;">Detailed title brand listings are sourced from jurisdictional filings. Definitions for each brand type appear in the glossary below.</p>
+      <div class="title-brand-table" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1.5px solid var(--border); border-radius: 6px; overflow: hidden;">
+        <!-- Header Row -->
+        <div style="background: var(--light-gray); padding: 12px 14px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--label); border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">Brand Category</div>
+        <div style="background: var(--light-gray); padding: 12px 14px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--label); border-bottom: 1px solid var(--border);">VinXtract Search Result</div>
+        
+        <!-- Brand Rows -->
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Agricultural Vehicle</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">These vehicles are used specifically for agricultural purposes.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Antique</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles 10 years old and older.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Bond Posted</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">The previous title holder posted a bond on the vehicle because the ownership of the vehicle could not be proven and a surety was required to obtain a new title. The bond is held until specified by law.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Collision</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles with collision damage.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Crushed</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles in a state of or which has been crushed or otherwise destroyed so that it is practically impossible to operate.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Disclosed Damage</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles whose damage that is required to be reported must be reported to prospective buyers.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Dismantled</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">These vehicles should as parts and will not be legally driven.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Export Only Vehicle</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles are to be exported out of the United States and has been brought into the country legally. These vehicles are typically used for export purposes.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Fire Damage</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles which damage that the vehicle was damaged by fire.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Flood Damage</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles which demonstrate the vehicle damaged by floodwater flood or it is unknown whether the damage was caused by flood water or salt water.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Hail Damage</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles damaged by hail.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Junk</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles incapable of safe operation for use out of the trash or for usage. In the vehicle is deemed too dangerous to be operated on roadways and is a legal liability.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Rebuilt</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">These cars have been successfully disassembled and they still safety inspections, or passed an inspection for legal title.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Salvage</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles with damage beyond 75% of their value and a policy was deemed to be a loss.</div></div>
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+
+        <div style="padding: 10px 14px; border-right: 1px solid var(--border); font-size: 12px; color: var(--dark);"><strong>Totaled</strong><div style="font-size: 11px; color: var(--label); margin-top: 3px; line-height: 1.4;">Vehicles with a total loss. It is a pre-requisite on an insurer that it deemed to be a total loss because the standard repair exceeds the damage that is incurred in an accident.</div></div>
+        <div style="padding: 10px 14px; display: flex; align-items: center; gap: 8px; font-size: 12px;"><span style="width: 20px; height: 20px; border: 2px solid var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--teal); font-weight: 700; flex-shrink: 0;">✓</span> <span style="color: var(--label);">NO BRAND REPORTED</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOSSARY -->
+  <div class="section">
+    <div class="section-title">Glossary</div>
+    <div class="glossary-grid">
+      <div class="glossary-item"><div class="g-term">Make</div><div class="g-def">The manufacturer's brand name.</div></div>
+      <div class="glossary-item"><div class="g-term">Model</div><div class="g-def">The manufacturer designation of the lot.</div></div>
+      <div class="glossary-item"><div class="g-term">Year</div><div class="g-def">The manufacturer's designated model year.</div></div>
+      <div class="glossary-item"><div class="g-term">Body Style</div><div class="g-def">The manufacturer's designation of the vehicle's configuration.</div></div>
+      <div class="glossary-item"><div class="g-term">Doors</div><div class="g-def">The number of passenger doors on the vehicle's exterior (e.g., 2, 4).</div></div>
+      <div class="glossary-item"><div class="g-term">Cylinders</div><div class="g-def">The manufacturer's designation of the vehicle's power train.</div></div>
+      <div class="glossary-item"><div class="g-term">Fuel</div><div class="g-def">Designates the fuel type used by the engine as designated by the VIN.</div></div>
+      <div class="glossary-item"><div class="g-term">Drive</div><div class="g-def">The manufacturer's designation of the vehicle's power train.</div></div>
+      <div class="glossary-item"><div class="g-term">Engine</div><div class="g-def">The motor specification denoted by the VIN of the vehicle.</div></div>
+      <div class="glossary-item"><div class="g-term">Clear Title</div><div class="g-def">Indicates that the vehicle has not been damaged beyond repair and no liens have been placed on it.</div></div>
+      <div class="glossary-item"><div class="g-term">Salvage Title</div><div class="g-def">Issued to vehicles damaged beyond 75% of original value. Can be rebuilt but will never again hold clear title status.</div></div>
+      <div class="glossary-item"><div class="g-term">Rebuilt/Reconstructed Title</div><div class="g-def">Means the salvaged vehicle has been successfully repaired to full operation and safety.</div></div>
+      <div class="glossary-item"><div class="g-term">Junk Title</div><div class="g-def">Issued for a vehicle with damage over 75% of its value. Such vehicles are not eligible for road use.</div></div>
+      <div class="glossary-item"><div class="g-term">Dismantled Title</div><div class="g-def">Issued to vehicles with serious damage to major components. May only be used for parts and scrap metal.</div></div>
+      <div class="glossary-item"><div class="g-term">Odometer – Actual</div><div class="g-def">The odometer has not been tampered with, reached its mechanical limits, or been altered — represents true mileage.</div></div>
+      <div class="glossary-item"><div class="g-term">Odometer – Exempt</div><div class="g-def">By Federal Law, no odometer disclosure is required to be displayed for this lot.</div></div>
+    </div>
+  </div>
+
+  <!-- VEHICLE STATUS SUMMARY -->
+  <div class="section">
+    <div class="section-title">Vehicle Status Summary</div>
+    <div class="status-summary">
+      <div class="status-panel">
+        <div>
+          <div class="status-heading">
+            <div class="status-icon">🚗</div>
+            <div class="heading-copy">
+              <div class="status-name">Damage History</div>
+              <div class="status-sub">Accident and damage records</div>
+            </div>
+          </div>
+        </div>
+        <div class="status-box">
+          <div class="status-marker">✓</div>
+          <div><strong>Clear —</strong> No record of accidents or damage reported for this vehicle.</div>
+        </div>
+        <div>
+          <div class="status-heading">
+            <div class="status-icon">🔒</div>
+            <div class="heading-copy">
+              <div class="status-name">Stolen Status</div>
+              <div class="status-sub">Theft and security status check</div>
+            </div>
+          </div>
+        </div>
+        <div class="status-box">
+          <div class="status-marker">✓</div>
+          <div><strong>Clear —</strong> No theft record found.</div>
+        </div>
+      </div>
+      <div class="status-image">
+        <img src="{{EXAMPLE_CAR_IMAGE}}" alt="Example vehicle diagram">
+      </div>
+    </div>
+  </div>
+
+  <!-- VinXtract Disclaimer -->
+  <div class="section">
+    <div class="section-title">VinXtract Consumer Access Product Disclaimer</div>
+    <div class="VinXtract-box">
+      <div class="VinXtract-logo">
+        <div class="VinXtract-badge">VinXtract</div>
+        <div class="VinXtract-sub">National Motor Vehicle Title Information System</div>
+      </div>
+      <div class="VinXtract-text">
+        <h4>About VinXtract</h4>
+        The National Motor Vehicle Title Information System (VinXtract) is an electronic system that contains information on certain automobiles titled in the United States. VinXtract is intended to serve as a reliable source of title and brand history for automobiles, but it does not contain detailed information regarding a vehicle's repair history.
+        <br><br>
+        All states, insurance companies, and junk and salvage yards are required by federal law to regularly report information to VinXtract. However, VinXtract does not contain information on all motor vehicles in the United States because some states are not yet providing their vehicle data to the system. Currently, data is provided in a variety of time frames; while some states report in real-time, other states send updates less frequently, such as once every 24 hours.
+        <br><br>
+        Information on previous, significant vehicle damage may not be included in the system if the vehicle was never determined by an insurance company (or other appropriate entity) to be a "total loss" or branded by a state.
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="report-footer">
+    VinXtract.com &nbsp;·&nbsp; Vehicle History Report &nbsp;·&nbsp; Powered by VinXtract
+  </div>
+
+</div><!-- end .page-wrap -->
+
+
+</body>
+</html>

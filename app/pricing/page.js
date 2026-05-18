@@ -14,7 +14,7 @@ export default function Pricing() {
   const [loading, setLoading] = useState(false);
 
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
-  const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/47537/';
+  const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/45983/?sandbox=true';
   const normalizePaymentLink = (link) => {
     if (!link) return FREEMIUS_LINK;
     return link.includes('payoneer.com') ? FREEMIUS_LINK : link;
@@ -272,7 +272,15 @@ export default function Pricing() {
 
     sendMail(submitData);
     // openPaddleCheckout(formData.name, formData.email, formData.vin);
-    window.location.href = PRICING_TIERS[selectedTier].payoneerLink;
+    try {
+      const link = PRICING_TIERS[selectedTier].payoneerLink || ''
+      const returnUrl = encodeURIComponent(window.location.origin + '/thankyou')
+      const sep = link.includes('?') ? '&' : '?'
+      // Try both return_url and return parameters for Freemius
+      window.location.href = link + sep + 'return_url=' + returnUrl + '&return=' + returnUrl
+    } catch (e) {
+      window.location.href = PRICING_TIERS[selectedTier].payoneerLink
+    }
   };
   return (
     <div className="min-h-screen bg-white">
@@ -688,7 +696,7 @@ export default function Pricing() {
 
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
-                  Vehicle VIN Number
+                  Vehicle REG Number
                 </label>
                 <input
                   type="text"
@@ -697,7 +705,7 @@ export default function Pricing() {
                   onChange={handleInputChange}
                   required
                   style={modalStyles.input}
-                  placeholder="Enter VIN number"
+                  placeholder="Enter REG number"
                 />
               </div>
 
