@@ -188,7 +188,7 @@ export async function POST(request) {
   const executablePath =
     process.env.PUPPETEER_EXECUTABLE_PATH ||
     process.env.CHROME_PATH ||
-    chromium.executablePath()
+    (await chromium.executablePath())
 
   if (!executablePath) {
     return NextResponse.json(
