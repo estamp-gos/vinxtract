@@ -6,9 +6,9 @@ export default function PaymentSuccessEmailTemplate({ customerEmail, customerNam
       <h2 style={{ color: '#16a34a' }}>Payment Successful! 🎉</h2>
       <p>
         Hello {customerName},
-      </p>
       <p>
-        Thank you for your payment! We have successfully received your payment for the <strong>{productName}</strong> ({tierName} Report).
+        If you have any questions or need assistance, please don\'t hesitate to contact us at 
+        <a href="mailto:car.check.store@gmail.com" style={{ color: '#16a34a' }}>car.check.store@gmail.com</a>
       </p>
       
       <div style={{ 
@@ -49,7 +49,7 @@ export default function PaymentSuccessEmailTemplate({ customerEmail, customerNam
 
       <p>
         If you have any questions or need assistance, please don&apos;t hesitate to contact us at 
-        <a href="mailto:support@vinxtract.com" style={{ color: '#16a34a' }}> car.check.store@gmail.com</a>
+        <a href="mailto:car.check.store@gmail.com" style={{ color: '#16a34a' }}>car.check.store@gmail.com</a>
       </p>
 
       <p>Thank you for choosing CarCheck!</p>

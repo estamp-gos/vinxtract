@@ -133,7 +133,7 @@ export default function ThankYou() {
           </h1>
 
           <p className="text-xl text-gray-600 mb-8">
-            Your VinXtractStore VIN report request has been successfully submitted and payment has been processed. Your comprehensive vehicle history report will be delivered soon. For any query feel free to message us on support@vinxtract.com
+            Your VinXtractStore VIN report request has been successfully submitted and payment has been processed. Your comprehensive vehicle history report will be delivered soon. For any query feel free to message us on car.check.store@gmail.com
           </p>
 
           <div className="bg-white p-8 rounded-2xl shadow-lg mb-8">
@@ -208,7 +208,7 @@ export default function ThankYou() {
 
             <button
               type="button"
-              onClick={() => { window.location.href = 'mailto:support@vinxtract.com' }}
+              onClick={() => { window.location.href = 'mailto:car.check.store@gmail.com' }}
               className="bg-white text-blue-600 border-2 border-blue-600 px-8 py-3 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold"
             >
               Contact Support
@@ -229,7 +229,7 @@ export default function ThankYou() {
                 </svg>
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Email Support</h3>
-              <p className="text-gray-600 text-sm">support@vinxtract.com</p>
+              <p className="text-gray-600 text-sm">car.check.store@gmail.com</p>
             </div>
 
             <div className="text-center">

@@ -81,7 +81,7 @@ export default function RefundPolicy() {
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li><strong>Refund Period:</strong> 14 calendar days from purchase date</li>
-                <li><strong>Request Method:</strong> Email support@vinxtract.com with your request</li>
+                <li><strong>Request Method:</strong> Email car.check.store@gmail.com with your request</li>
                 <li><strong>Processing Time:</strong> Approved refunds processed within 5-7 business days</li>
                 <li><strong>Refund Method:</strong> Original payment method used for purchase</li>
               </ul>
@@ -173,7 +173,7 @@ export default function RefundPolicy() {
                 If you believe your situation qualifies for a refund under our policy:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                <li><strong>Contact us within 14 days:</strong> Email support@vinxtract.com</li>
+                <li><strong>Contact us within 14 days:</strong> Email car.check.store@gmail.com</li>
                 <li><strong>Include your order details:</strong> Purchase date, VIN number, and payment information</li>
                 <li><strong>Explain the qualifying reason:</strong> Clearly describe why you believe a refund is warranted</li>
                 <li><strong>Provide evidence if applicable:</strong> Screenshots of errors or technical issues</li>
@@ -254,7 +254,7 @@ export default function RefundPolicy() {
               </p>
               <div className="bg-gray-50 p-6 rounded-lg mt-4">
                 <p className="text-gray-700">
-                  <strong>Email:</strong> support@vinxtract.com<br/>
+                  <strong>Email:</strong> car.check.store@gmail.com<br/>
                   <strong>Website:</strong> <Link href="https://VinXtract.com" className="text-blue-600 hover:text-blue-700">https://VinXtract.com</Link><br/>
                   <strong>Response Time:</strong> 24-48 hours
                 </p>

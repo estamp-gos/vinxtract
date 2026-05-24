@@ -2013,7 +2013,7 @@ export default function App() {
               <div className="space-y-4">
                 <div>
                   <div className="font-medium text-gray-900">Email Support</div>
-                  <div className="text-blue-600">support@vinxtract.com</div>
+                  <div className="text-blue-600">car.check.store@gmail.com</div>
                   <div className="text-sm text-gray-600 mt-1">Response within 24-48 hours</div>
                 </div>
                 <div>

@@ -187,7 +187,7 @@ export default function PrivacyPolicy() {
               </p>
               <div className="bg-gray-50 p-6 rounded-lg mt-4">
                 <p className="text-gray-700">
-                  <strong>Email:</strong> support@vinxtract.com<br/>
+                  <strong>Email:</strong> car.check.store@gmail.com<br/>
                   <strong>Website:</strong> <Link href="https://VinXtract.com" className="text-blue-600 hover:text-blue-700">https://VinXtract.com</Link>
                 </p>
               </div>

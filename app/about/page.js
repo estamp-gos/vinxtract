@@ -243,7 +243,7 @@ export default function About() {
               <div className="space-y-4">
                 <div>
                   <div className="font-medium text-gray-900">Email Support</div>
-                  <div className="text-gray-600">support@vinxtract.com</div>
+                  <div className="text-gray-600">car.check.store@gmail.com</div>
                 </div>
                 <div>
                   <div className="font-medium text-gray-900">Response Time</div>

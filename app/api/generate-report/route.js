@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
 import chromium from '@sparticuz/chromium'
-import puppeteer from 'puppeteer-core'
+import puppeteerCore from 'puppeteer-core'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -185,17 +185,99 @@ export async function POST(request) {
   html = stripTrailingScript(html)
   html = applyPlaceholders(html, placeholders)
 
-  const executablePath =
-    process.env.PUPPETEER_EXECUTABLE_PATH ||
-    process.env.CHROME_PATH ||
-    (await chromium.executablePath())
+  let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH
+  try {
+    if (!executablePath) {
+      executablePath = await chromium.executablePath()
+    }
+  } catch (e) {
+    // ignore; chromium may not provide a local binary in dev environments
+  }
 
+  // Ensure the executablePath actually exists; if it doesn't, unset to allow fallback.
+  if (executablePath) {
+    try {
+      await fs.access(executablePath)
+      const stat = await fs.stat(executablePath)
+      if (typeof stat.isDirectory === 'function' && stat.isDirectory()) {
+        // chromium.executablePath() may return a directory; try common names inside it
+        const insideCandidates = ['chrome.exe', 'chromium.exe', 'chrome', 'chromium']
+        let found = false
+        for (const name of insideCandidates) {
+          const candidate = path.join(executablePath, name)
+          try {
+            await fs.access(candidate)
+            executablePath = candidate
+            found = true
+            break
+          } catch {
+            // try next
+          }
+        }
+        if (!found) {
+          throw new Error('no executable inside chromium dir')
+        }
+      }
+    } catch (e) {
+      console.warn('Chromium executablePath not found, falling back to bundled puppeteer:', executablePath)
+      executablePath = undefined
+    }
+  }
+
+  // If still not found, probe common system locations for Chrome/Chromium (helpful in local dev).
   if (!executablePath) {
+    const candidates = [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      '/usr/bin/google-chrome-stable',
+      '/usr/bin/google-chrome',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/chromium',
+      '/snap/bin/chromium',
+    ]
+    for (const c of candidates) {
+      try {
+        await fs.access(c)
+        executablePath = c
+        console.log('Found system Chrome at', c)
+        break
+      } catch {
+        // try next
+      }
+    }
+  }
+
+  // Also check Puppeteer's cache for a downloaded Chrome binary (e.g. C:\Users\...\.cache\puppeteer\chrome\<version>\chrome-win64\chrome.exe)
+  if (!executablePath) {
+    const userHome = process.env.USERPROFILE || process.env.HOME || ''
+    const puppeteerCache = path.join(userHome, '.cache', 'puppeteer', 'chrome')
+    try {
+      const versions = await fs.readdir(puppeteerCache)
+      // pick the most recent-looking folder
+      versions.sort().reverse()
+      for (const v of versions) {
+        const candidate = path.join(puppeteerCache, v, 'chrome-win64', 'chrome.exe')
+        try {
+          await fs.access(candidate)
+          executablePath = candidate
+          console.log('Using puppeteer cached chrome at', candidate)
+          break
+        } catch {
+          // continue
+        }
+      }
+    } catch {
+      // ignore if cache dir missing
+    }
+  }
+
+  const requireExecutableInProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL
+  if (!executablePath && requireExecutableInProd) {
     return NextResponse.json(
       {
         success: false,
         message:
-          'No Chrome/Chromium executable found for PDF rendering. Install Chrome locally or set PUPPETEER_EXECUTABLE_PATH.',
+          'No Chrome/Chromium executable found for PDF rendering. Install Chrome locally or set PUPPETE_EXECUTABLE_PATH.',
       },
       { status: 503 }
     )
@@ -204,29 +286,85 @@ export async function POST(request) {
   /** @type {import('puppeteer-core').Browser} */
   let browser
   try {
+    const extraArgs = [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-software-rasterizer',
+    ]
+
+    const baseArgs = (chromium.args || []).filter(a => a !== '--single-process' && a !== '--no-zygote')
     const launchOptions = {
       headless: chromium.headless ?? true,
       executablePath,
-      args: (chromium.args || []).concat([
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-      ]),
+      args: baseArgs.concat(extraArgs),
       ignoreHTTPSErrors: true,
+      dumpio: true,
     }
+
+    // Choose puppeteer implementation: prefer puppeteer-core when we have an executablePath,
+    // otherwise fall back to the full puppeteer package (which bundles Chromium) for local dev.
+    const puppeteerImpl = executablePath ? puppeteerCore : (await import('puppeteer')).default
 
     console.log('Launching Chromium for PDF generation', {
       executablePath: String(executablePath).slice(0, 200),
       headless: launchOptions.headless,
+      using: executablePath ? 'puppeteer-core' : 'puppeteer',
     })
 
-    browser = await puppeteer.launch(launchOptions)
+    try {
+      browser = await puppeteerImpl.launch(launchOptions)
+    } catch (launchErr) {
+      console.warn('Primary puppeteer launch failed:', String(launchErr).slice(0, 200))
+      // If we tried puppeteer-core with a missing executable, try fallback to full puppeteer (bundled chrome)
+      if (executablePath) {
+        try {
+          const alt = (await import('puppeteer')).default
+          const altOptions = { ...launchOptions }
+          delete altOptions.executablePath
+          console.log('Retrying launch with bundled puppeteer (no executablePath)')
+          browser = await alt.launch(altOptions)
+        } catch (altErr) {
+          console.error('Fallback puppeteer launch also failed:', altErr)
+          throw launchErr
+        }
+      } else {
+        throw launchErr
+      }
+    }
 
     const page = await browser.newPage()
     await page.setViewport({ width: 1024, height: 1400 })
     await page.emulateMediaType('print')
+    // instrument page for extra debug info in non-production
+    if (process.env.NODE_ENV !== 'production') {
+      page.on('console', (m) => console.log('PAGE_CONSOLE:', m.text ? m.text() : String(m)))
+      page.on('pageerror', (err) => console.error('PAGE_ERROR:', err && err.stack ? err.stack : err))
+    }
+
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 90_000 })
-    await new Promise((r) => setTimeout(r, 800))
+    // allow content to stabilise
+    await new Promise((r) => setTimeout(r, 1500))
+
+    // Debug: capture HTML length and screenshot when not in production
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const bodyHtml = await page.content()
+        console.log('PAGE_HTML_LENGTH:', bodyHtml.length)
+        const debugPath = path.join(process.cwd(), 'tmp-pdf-debug.png')
+        await page.screenshot({ path: debugPath, fullPage: true })
+        try {
+          const st = await fs.stat(debugPath)
+          console.log('DEBUG_SCREENSHOT_SIZE:', st.size, 'bytes ->', debugPath)
+        } catch (e) {
+          console.warn('Could not stat debug screenshot', e)
+        }
+      } catch (e) {
+        console.warn('Debug capture failed', e)
+      }
+    }
+
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
