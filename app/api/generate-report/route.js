@@ -204,11 +204,23 @@ export async function POST(request) {
   /** @type {import('puppeteer-core').Browser} */
   let browser
   try {
-    browser = await puppeteer.launch({
-      headless: true,
+    const launchOptions = {
+      headless: chromium.headless ?? true,
       executablePath,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      args: (chromium.args || []).concat([
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+      ]),
+      ignoreHTTPSErrors: true,
+    }
+
+    console.log('Launching Chromium for PDF generation', {
+      executablePath: String(executablePath).slice(0, 200),
+      headless: launchOptions.headless,
     })
+
+    browser = await puppeteer.launch(launchOptions)
 
     const page = await browser.newPage()
     await page.setViewport({ width: 1024, height: 1400 })
@@ -237,7 +249,9 @@ export async function POST(request) {
     if (browser) {
       await browser.close().catch(() => {})
     }
+    console.error('PDF generation error:', err)
     const msg = err instanceof Error ? err.message : 'PDF generation failed'
-    return NextResponse.json({ success: false, message: msg }, { status: 500 })
+    const stack = err && err.stack ? String(err.stack).slice(0, 2000) : undefined
+    return NextResponse.json({ success: false, message: msg, stack }, { status: 500 })
   }
 }
