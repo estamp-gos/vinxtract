@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['puppeteer', 'puppeteer-core', '@sparticuz/chromium'],
+  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium-min'],
 
   // Enable compression for better performance
   compress: true,
@@ -71,6 +71,7 @@ const nextConfig = {
   
   // Enable experimental features for better performance
   experimental: {
+    serverComponentsExternalPackages: ['puppeteer-core', '@sparticuz/chromium-min'],
     // optimizeCss: true, // Temporarily disabled due to critters module issue
   },
 };

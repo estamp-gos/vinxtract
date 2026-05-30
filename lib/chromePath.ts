@@ -1,21 +1,11 @@
 import fs from 'fs'
-import puppeteer from 'puppeteer'
 
-/**
- * Puppeteer resolves bundled Chromium when downloaded; env / common paths handle skip-download installs.
- */
+/** Resolves a local Chrome/Chromium binary from env or common install paths. */
 export function resolveChromeExecutable(): string | undefined {
   const fromEnv =
     process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH
   if (fromEnv && fs.existsSync(fromEnv)) {
     return fromEnv
-  }
-
-  try {
-    const bundled = puppeteer.executablePath()
-    if (bundled && fs.existsSync(bundled)) return bundled
-  } catch {
-    /* no bundled browser */
   }
 
   if (process.platform === 'win32') {
