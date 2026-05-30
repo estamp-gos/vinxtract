@@ -71,7 +71,6 @@ const nextConfig = {
   
   // Enable experimental features for better performance
   experimental: {
-    serverComponentsExternalPackages: ['puppeteer-core', '@sparticuz/chromium-min'],
     // optimizeCss: true, // Temporarily disabled due to critters module issue
   },
 };

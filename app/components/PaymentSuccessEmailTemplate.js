@@ -6,12 +6,9 @@ export default function PaymentSuccessEmailTemplate({ customerEmail, customerNam
       <h2 style={{ color: '#16a34a' }}>Payment Successful! 🎉</h2>
       <p>
         Hello {customerName},
-      <p>
-        If you have any questions or need assistance, please don\'t hesitate to contact us at 
-        <a href="mailto:car.check.store@gmail.com" style={{ color: '#16a34a' }}>car.check.store@gmail.com</a>
       </p>
       
-      <div style={{ 
+      <div style={{
         backgroundColor: '#f8f9fa', 
         padding: '16px', 
         borderRadius: '8px', 

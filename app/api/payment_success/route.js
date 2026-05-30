@@ -1,13 +1,9 @@
 import { Paddle, Environment, EventName } from '@paddle/paddle-node-sdk';
-import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
-import PaymentSuccessEmailTemplate from '@/app/components/PaymentSuccessEmailTemplate';
 
 const paddle = new Paddle(process.env.PADDLE_API_KEY, {
   environment: Environment.production, // or Environment.sandbox if testing
 });
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request) {
   try {
