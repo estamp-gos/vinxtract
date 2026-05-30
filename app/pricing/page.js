@@ -14,7 +14,7 @@ export default function Pricing() {
   const [loading, setLoading] = useState(false);
 
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
-  const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/45983/?sandbox=true';
+  const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/47537/';
   const normalizePaymentLink = (link) => {
     if (!link) return FREEMIUS_LINK;
     return link.includes('payoneer.com') ? FREEMIUS_LINK : link;
