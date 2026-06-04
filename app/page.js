@@ -2,6 +2,13 @@
 import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useVehicle } from '@/lib/vehicleContext'
+import {
+  buildDocuKitPaymentUrl,
+  deriveCustomerName,
+  getDefaultSuccessUrl,
+  DOCUKIT_CHECKOUT_PACKAGE,
+  getPackagePrice,
+} from '@/lib/docukitPayment'
 
 export default function App() {
   const {
@@ -77,62 +84,43 @@ export default function App() {
   }
 
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
-  const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/47537/';
-  const normalizePaymentLink = (link) => {
-    if (!link) return FREEMIUS_LINK;
-    return link.includes('payoneer.com') ? FREEMIUS_LINK : link;
-  };
 
-  const [links, setLinks] = useState({
-    basic: FREEMIUS_LINK,
-    standard: FREEMIUS_LINK,
-    premium: FREEMIUS_LINK
-  });
+  // Freemius payment links (disabled — using DocuKit / Paddle instead)
+  // const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/47537/';
+  // const normalizePaymentLink = (link) => {
+  //   if (!link) return FREEMIUS_LINK;
+  //   return link.includes('payoneer.com') ? FREEMIUS_LINK : link;
+  // };
+  // const [links, setLinks] = useState({ basic: FREEMIUS_LINK, standard: FREEMIUS_LINK, premium: FREEMIUS_LINK });
+  // useEffect(() => { ... initLinks from Google Sheets ... }, []);
 
-  // Load config from Google Sheets
+  // Keep Apps Script URL in localStorage for setup.html
   useEffect(() => {
-    async function initLinks() {
+    async function storeConfigUrl() {
       try {
-        // 1. Get Google Sheets URL from config.json
         const configRes = await fetch('/config.json');
         const config = await configRes.json();
-        
-        // Use local fallbacks first
-        const initialLinks = {
-          basic: normalizePaymentLink(config.payoneerLink_basic),
-          standard: normalizePaymentLink(config.payoneerLink_standard),
-          premium: normalizePaymentLink(config.payoneerLink_premium)
-        };
-        setLinks(initialLinks);
-
-        // 2. Fetch fresh data from Google Sheets if URL exists
-        const sheetUrl = config.APPS_SCRIPT_URL || APPS_SCRIPT_URL || localStorage.getItem('vinxtract_config_url');
+        const sheetUrl =
+          config.APPS_SCRIPT_URL ||
+          APPS_SCRIPT_URL ||
+          localStorage.getItem('vinxtract_config_url');
         if (sheetUrl) {
-          const res = await fetch(`${sheetUrl}?action=getConfig`);
-          if (res.ok) {
-            const data = await res.json();
-            setLinks({
-              basic: normalizePaymentLink(data.payoneerLink_basic),
-              standard: normalizePaymentLink(data.payoneerLink_standard),
-              premium: normalizePaymentLink(data.payoneerLink_premium)
-            });
-            // Also store URL in localStorage for setup.html
-            localStorage.setItem('vinxtract_config_url', sheetUrl);
-          }
+          localStorage.setItem('vinxtract_config_url', sheetUrl);
         }
       } catch (err) {
-        console.error('Failed to load links:', err);
+        console.error('Failed to load config:', err);
       }
     }
-    initLinks();
+    storeConfigUrl();
   }, []);
 
-  // Pricing Tiers Configuration - Vehicle Types
+  const reportPackagePrice = getPackagePrice(DOCUKIT_CHECKOUT_PACKAGE, currency.code)
+
+  // Pricing Tiers Configuration - matches DocuKit ultimate package
   const PRICING_TIERS = {
     standard: {
-      name: 'Standard',
-      price: 57, // Price in GBP
-      payoneerLink: links.standard,
+      name: 'Ultimate',
+      price: reportPackagePrice,
       description: 'Complete Vehicle Report',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
     }
@@ -205,17 +193,27 @@ export default function App() {
     }
   }
 
-  // Proceed to payment link
+  // Redirect to DocuKit payment page (Paddle checkout)
   const proceedToPayment = () => {
     setCheckoutLoading(true)
     try {
-      const link = PRICING_TIERS[selectedTier].payoneerLink || ''
-      const returnUrl = encodeURIComponent(window.location.origin + '/thankyou')
-      const sep = link.includes('?') ? '&' : '?'
-      // Try both return_url and return parameters for Freemius
-      window.location.href = link + sep + 'return_url=' + returnUrl + '&return=' + returnUrl
+      const paymentUrl = buildDocuKitPaymentUrl({
+        name: deriveCustomerName({
+          email: emailInput,
+          carModel: carModelInput,
+        }),
+        email: emailInput.trim(),
+        vin: vinInput.trim(),
+        vehicle_type: vehicleType,
+        package: DOCUKIT_CHECKOUT_PACKAGE,
+        currency: currency.code,
+        success_url: getDefaultSuccessUrl(),
+      })
+      window.location.href = paymentUrl
     } catch (e) {
-      window.location.href = PRICING_TIERS[selectedTier].payoneerLink
+      console.error('DocuKit payment redirect failed:', e)
+      setCheckoutLoading(false)
+      alert('Unable to open the payment page. Please try again.')
     }
   }
 
@@ -458,7 +456,7 @@ export default function App() {
                   </div>
                   <div className="text-center">
                     <div className="text-3xl mb-2 animate-pulse">💰</div>
-                    <div className="text-sm font-semibold text-gray-900">From {formatPrice(30)}</div>
+                    <div className="text-sm font-semibold text-gray-900">From {formatPrice(reportPackagePrice)}</div>
                     <div className="text-xs text-gray-600">One-time</div>
                   </div>
                   <div className="text-center">
@@ -839,7 +837,7 @@ export default function App() {
 
                   {/* Price Badge - Below Reviews */}
                   <div className="mt-4 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full shadow-xl animate-pulse inline-block">
-                    <span className="text-sm font-bold">From {formatPrice(30)}</span>
+                    <span className="text-sm font-bold">From {formatPrice(reportPackagePrice)}</span>
                   </div>
                 </div>
               </div>

@@ -2,6 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import {
+  buildDocuKitPaymentUrl,
+  getDefaultSuccessUrl,
+  DOCUKIT_CHECKOUT_PACKAGE,
+  getPackagePrice,
+} from '@/lib/docukitPayment';
 
 export default function Pricing() {
   const [showModal, setShowModal] = useState(false);
@@ -14,73 +20,48 @@ export default function Pricing() {
   const [loading, setLoading] = useState(false);
 
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
-  const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/47537/';
-  const normalizePaymentLink = (link) => {
-    if (!link) return FREEMIUS_LINK;
-    return link.includes('payoneer.com') ? FREEMIUS_LINK : link;
-  };
 
-  const [links, setLinks] = useState({
-    basic: FREEMIUS_LINK,
-    standard: FREEMIUS_LINK,
-    premium: FREEMIUS_LINK
-  });
+  // Freemius payment links (disabled — using DocuKit / Paddle instead)
+  // const FREEMIUS_LINK = 'https://checkout.freemius.com/product/27824/plan/47537/';
+  // ... Google Sheets payoneer link loading removed ...
 
-  // Load config from Google Sheets
   useEffect(() => {
-    async function initLinks() {
+    async function storeConfigUrl() {
       try {
-        // 1. Get Google Sheets URL from config.json
         const configRes = await fetch('/config.json');
         const config = await configRes.json();
-        
-        // Use local fallbacks first
-        const initialLinks = {
-          basic: normalizePaymentLink(config.payoneerLink_basic),
-          standard: normalizePaymentLink(config.payoneerLink_standard),
-          premium: normalizePaymentLink(config.payoneerLink_premium)
-        };
-        setLinks(initialLinks);
-
-        // 2. Fetch fresh data from Google Sheets if URL exists
-        const sheetUrl = config.APPS_SCRIPT_URL || APPS_SCRIPT_URL || localStorage.getItem('vinxtract_config_url');
+        const sheetUrl =
+          config.APPS_SCRIPT_URL ||
+          APPS_SCRIPT_URL ||
+          localStorage.getItem('vinxtract_config_url');
         if (sheetUrl) {
-          const res = await fetch(`${sheetUrl}?action=getConfig`);
-          if (res.ok) {
-            const data = await res.json();
-            setLinks({
-              basic: normalizePaymentLink(data.payoneerLink_basic),
-              standard: normalizePaymentLink(data.payoneerLink_standard),
-              premium: normalizePaymentLink(data.payoneerLink_premium)
-            });
-            // Also store URL in localStorage for setup.html
-            localStorage.setItem('vinxtract_config_url', sheetUrl);
-          }
+          localStorage.setItem('vinxtract_config_url', sheetUrl);
         }
       } catch (err) {
-        console.error('Failed to load links:', err);
+        console.error('Failed to load config:', err);
       }
     }
-    initLinks();
+    storeConfigUrl();
   }, []);
 
-  // Pricing Tiers Configuration - Vehicle Types
+  const reportPackagePrice = getPackagePrice(DOCUKIT_CHECKOUT_PACKAGE, 'GBP');
+
+  // Pricing Tiers Configuration - matches DocuKit ultimate package
   const PRICING_TIERS = {
     standard: {
-      name: 'Standard',
-      price: 57,
+      name: 'Ultimate',
+      price: reportPackagePrice,
       priceId: 'pri_01k8bm1n7k6kdkb62d0e5r1nha',
-      payoneerLink: links.standard,
       description: 'Complete Vehicle Report',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
     }
   }
 
-  // Paddle Configuration
-  const CONFIG = {
-    clientToken: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
-    priceId: PRICING_TIERS[selectedTier].priceId
-  };
+  // Direct Paddle checkout (disabled — payments go through DocuKit)
+  // const CONFIG = {
+  //   clientToken: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
+  //   priceId: PRICING_TIERS[selectedTier].priceId
+  // };
 
   // Modal styles
   const modalStyles = {
@@ -143,46 +124,8 @@ export default function Pricing() {
     }
   };
 
-  // Initialize Paddle
-  useEffect(() => {
-    let isMounted = true;
-
-    const initializePaddle = () => {
-      if (window.Paddle && isMounted) {
-        try {
-          window.Paddle.Environment.set("production");
-          window.Paddle.Setup({
-            token: CONFIG.clientToken,
-            eventCallback: function (event) {
-              if (event.name === "checkout.completed") {
-                setShowModal(false);
-                alert("Payment successful! You will receive your report shortly.");
-              }
-            }
-          });
-        } catch (error) {
-          console.error("Paddle initialization error:", error);
-        }
-      }
-    };
-
-    // Load Paddle script if not already loaded
-    if (!window.Paddle) {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
-      script.onload = initializePaddle;
-      script.onerror = () => {
-        console.error("Failed to load Paddle script");
-      };
-      document.head.appendChild(script);
-    } else {
-      initializePaddle();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [CONFIG.clientToken]);
+  // Initialize Paddle (disabled — DocuKit hosts Paddle checkout)
+  // useEffect(() => { ... Paddle.Setup ... }, []);
 
   // Open modal
   const openModal = () => {
@@ -226,38 +169,8 @@ export default function Pricing() {
     }
   };
 
-  // Open Paddle checkout
-  const openPaddleCheckout = (customerName, customerEmail, customerVin) => {
-    try {
-
-      window.Paddle.Checkout.open({
-        items: [{
-          priceId: CONFIG.priceId,
-          quantity: 1
-        }],
-        settings: {
-          displayMode: "overlay",
-          theme: "light",
-          locale: "en",
-        },
-        customData: {
-          "name": customerName,
-          "email": customerEmail,
-          "vin": customerVin,
-          "tier": selectedTier,
-          "tierName": PRICING_TIERS[selectedTier].name,
-          "tierPrice": PRICING_TIERS[selectedTier].price
-        }
-      });
-
-      setLoading(false);
-
-    } catch (error) {
-      console.error("Paddle checkout error:", error.message);
-      alert("There was an error opening the checkout. Please try again.");
-      setLoading(false);
-    }
-  };
+  // Direct Paddle overlay checkout (disabled — use DocuKit redirect)
+  // const openPaddleCheckout = (customerName, customerEmail, customerVin) => { ... };
 
   // Handle form submission
   const handleSubmit = (e) => {
@@ -271,15 +184,21 @@ export default function Pricing() {
     };
 
     sendMail(submitData);
-    // openPaddleCheckout(formData.name, formData.email, formData.vin);
+
     try {
-      const link = PRICING_TIERS[selectedTier].payoneerLink || ''
-      const returnUrl = encodeURIComponent(window.location.origin + '/thankyou')
-      const sep = link.includes('?') ? '&' : '?'
-      // Try both return_url and return parameters for Freemius
-      window.location.href = link + sep + 'return_url=' + returnUrl + '&return=' + returnUrl
+      const paymentUrl = buildDocuKitPaymentUrl({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        vin: formData.vin.trim(),
+        package: DOCUKIT_CHECKOUT_PACKAGE,
+        currency: 'GBP',
+        success_url: getDefaultSuccessUrl(),
+      });
+      window.location.href = paymentUrl;
     } catch (e) {
-      window.location.href = PRICING_TIERS[selectedTier].payoneerLink
+      console.error('DocuKit payment redirect failed:', e);
+      setLoading(false);
+      alert('Unable to open the payment page. Please try again.');
     }
   };
   return (
@@ -402,7 +321,7 @@ export default function Pricing() {
               What is Included in Every Report
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              For $40, you get a comprehensive vehicle history analysis with data from multiple trusted sources.
+              For £{reportPackagePrice}, you get a comprehensive vehicle history analysis with data from multiple trusted sources.
             </p>
           </div>
 
@@ -548,8 +467,8 @@ export default function Pricing() {
           <div className="space-y-6">
             {[
               {
-                question: "What does the Standard report include?",
-                answer: "Our comprehensive £57 report includes full accident history, complete ownership records, mileage verification, title information, safety recalls, market value analysis, and detailed damage assessment - everything you need for informed vehicle purchasing decisions."
+                question: "What does the Ultimate report include?",
+                answer: `Our comprehensive £${reportPackagePrice} report includes full accident history, complete ownership records, mileage verification, title information, safety recalls, market value analysis, and detailed damage assessment - everything you need for informed vehicle purchasing decisions.`
               },
               {
                 question: "Why choose VinXtract?",
@@ -603,7 +522,7 @@ export default function Pricing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div className="text-center">
               <div className="font-semibold text-white">Single pricing option</div>
-              <div className="text-blue-100">£57 per report</div>
+              <div className="text-blue-100">£{reportPackagePrice} per report</div>
             </div>
             <div className="text-center">
               <div className="font-semibold text-white">Fast delivery: 6-12 hours</div>
