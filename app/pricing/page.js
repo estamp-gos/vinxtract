@@ -8,7 +8,6 @@ import {
   DOCUKIT_CHECKOUT_PACKAGE,
   getPackagePrice,
 } from '@/lib/docukitPayment';
-import { openVinXtractCheckout } from '@/lib/paddleCheckout';
 
 export default function Pricing() {
   const [showModal, setShowModal] = useState(false);
@@ -174,7 +173,7 @@ export default function Pricing() {
   // const openPaddleCheckout = (customerName, customerEmail, customerVin) => { ... };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
 
@@ -186,30 +185,20 @@ export default function Pricing() {
 
     sendMail(submitData);
 
-    const checkoutParams = {
-      name: formData.name.trim(),
-      email: formData.email.trim(),
-      vin: formData.vin.trim(),
-      package: DOCUKIT_CHECKOUT_PACKAGE,
-      success_url: getDefaultSuccessUrl(),
-    };
-
     try {
-      await openVinXtractCheckout(checkoutParams);
+      const paymentUrl = buildDocuKitPaymentUrl({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        vin: formData.vin.trim(),
+        package: DOCUKIT_CHECKOUT_PACKAGE,
+        currency: 'GBP',
+        success_url: getDefaultSuccessUrl(),
+      });
+      window.location.href = paymentUrl;
+    } catch (e) {
+      console.error('DocuKit payment redirect failed:', e);
       setLoading(false);
-    } catch (err) {
-      console.error('Paddle checkout failed, falling back to DocuKit:', err);
-      try {
-        const paymentUrl = buildDocuKitPaymentUrl({
-          ...checkoutParams,
-          currency: 'GBP',
-        });
-        window.location.href = paymentUrl;
-      } catch (fallbackError) {
-        console.error('DocuKit payment redirect failed:', fallbackError);
-        setLoading(false);
-        alert('Unable to open the payment page. Please try again.');
-      }
+      alert('Unable to open the payment page. Please try again.');
     }
   };
   return (

@@ -9,7 +9,6 @@ import {
   DOCUKIT_CHECKOUT_PACKAGE,
   getPackagePrice,
 } from '@/lib/docukitPayment'
-import { openVinXtractCheckout } from '@/lib/paddleCheckout'
 
 export default function App() {
   const {
@@ -194,37 +193,27 @@ export default function App() {
     }
   }
 
-  // Open Paddle checkout with success redirect to /thankyou
-  const proceedToPayment = async () => {
+  // Redirect to DocuKit payment page (Paddle checkout)
+  const proceedToPayment = () => {
     setCheckoutLoading(true)
-    const checkoutParams = {
-      name: deriveCustomerName({
-        email: emailInput,
-        carModel: carModelInput,
-      }),
-      email: emailInput.trim(),
-      vin: vinInput.trim(),
-      vehicle_type: vehicleType,
-      package: DOCUKIT_CHECKOUT_PACKAGE,
-      success_url: getDefaultSuccessUrl(),
-    }
-
     try {
-      await openVinXtractCheckout(checkoutParams)
-      setCheckoutLoading(false)
+      const paymentUrl = buildDocuKitPaymentUrl({
+        name: deriveCustomerName({
+          email: emailInput,
+          carModel: carModelInput,
+        }),
+        email: emailInput.trim(),
+        vin: vinInput.trim(),
+        vehicle_type: vehicleType,
+        package: DOCUKIT_CHECKOUT_PACKAGE,
+        currency: currency.code,
+        success_url: getDefaultSuccessUrl(),
+      })
+      window.location.href = paymentUrl
     } catch (e) {
-      console.error('Paddle checkout failed, falling back to DocuKit:', e)
-      try {
-        const paymentUrl = buildDocuKitPaymentUrl({
-          ...checkoutParams,
-          currency: currency.code,
-        })
-        window.location.href = paymentUrl
-      } catch (fallbackError) {
-        console.error('DocuKit payment redirect failed:', fallbackError)
-        setCheckoutLoading(false)
-        alert('Unable to open the payment page. Please try again.')
-      }
+      console.error('DocuKit payment redirect failed:', e)
+      setCheckoutLoading(false)
+      alert('Unable to open the payment page. Please try again.')
     }
   }
 
