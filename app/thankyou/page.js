@@ -103,12 +103,12 @@ export default function ThankYou() {
             <Link href="/" className="flex items-center">
               <Image
                 src="/car-logo.webp"
-                alt="VinXtractStore"
+                alt="VinXtract"
                 width={40}
                 height={40}
                 className="mr-3"
               />
-              <div className="text-2xl font-bold text-blue-600">VinXtractStore</div>
+              <div className="text-2xl font-bold text-blue-600">VinXtract</div>
             </Link>
 
             <nav className="hidden md:flex items-center space-x-8">
