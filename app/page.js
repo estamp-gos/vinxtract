@@ -58,7 +58,7 @@ export default function App() {
   const [vehicleType, setVehicleType] = useState('Car')
   
   // IP Detection & Currency State
-  const [currency, setCurrency] = useState({ symbol: '£', code: 'GBP', rate: 1 })
+  const [currency, setCurrency] = useState({ symbol: '€', code: 'EUR', rate: 1 })
 
   useEffect(() => {
     const detectLocation = async () => {
@@ -67,11 +67,11 @@ export default function App() {
         const response = await fetch('https://api.country.is')
         const data = await response.json()
         
-        // Always set to GBP
-        setCurrency({ symbol: '£', code: 'GBP', rate: 1 }) 
+        // Always set to EUR
+        setCurrency({ symbol: '€', code: 'EUR', rate: 1 }) 
       } catch (error) {
         console.error('Failed to detect IP location:', error)
-        setCurrency({ symbol: '£', code: 'GBP', rate: 1 })
+        setCurrency({ symbol: '€', code: 'EUR', rate: 1 })
       }
     }
     
@@ -79,8 +79,12 @@ export default function App() {
   }, [])
 
   // Helper function to dynamically format prices based on the detected currency
-  const formatPrice = (usdPrice) => {
-    return `${currency.symbol}${Math.round(usdPrice * currency.rate).toLocaleString()}`
+  const formatPrice = (price) => {
+    const value = price * currency.rate
+    const formatted = Number.isInteger(value)
+      ? value.toLocaleString()
+      : value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    return `${currency.symbol}${formatted}`
   }
 
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
@@ -275,7 +279,7 @@ export default function App() {
 
     setIsSubmitting(true)
 
-    const currentTierPrice = Math.round(PRICING_TIERS[selectedTier].price * currency.rate);
+    const currentTierPrice = PRICING_TIERS[selectedTier].price * currency.rate;
     const savedReport = {
       vin: vinInput.trim(),
       email: emailInput.trim(),
@@ -439,8 +443,8 @@ export default function App() {
               </div>
 
               <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 leading-tight animate-fadeInUp delay-100">
-                Know Before You Buy<br />
-                <span className="gradient-text-blue">Complete Vehicle History in Minutes</span>
+              Saiba Antes de Comprar <br />
+                <span className="gradient-text-blue">Histórico Completo do Veículo em Minutos</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8 max-w-3xl animate-fadeInUp delay-200">
                 Don&apos;t risk buying a lemon! Get instant access to <strong>accident history, title issues, odometer fraud,</strong> and more. Our comprehensive reports help you make confident decisions and negotiate better prices.

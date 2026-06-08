@@ -90,7 +90,7 @@ export default function TermsOfService() {
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li>Payment is required before report generation</li>
-                <li>Current price: £71 per vehicle history report</li>
+                <li>Current price: €24.99 per vehicle history report</li>
                 <li>All payments are processed securely through Paddle</li>
                 <li>Prices may change without notice</li>
                 <li>Refunds are available within 14 days under specific conditions outlined in our Refund Policy</li>

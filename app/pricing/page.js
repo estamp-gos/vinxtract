@@ -44,14 +44,14 @@ export default function Pricing() {
     storeConfigUrl();
   }, []);
 
-  const reportPackagePrice = getPackagePrice(DOCUKIT_CHECKOUT_PACKAGE, 'GBP');
+  const reportPackagePrice = getPackagePrice(DOCUKIT_CHECKOUT_PACKAGE, 'EUR');
 
   // Pricing Tiers Configuration - matches DocuKit ultimate package
   const PRICING_TIERS = {
     standard: {
       name: 'Ultimate',
       price: reportPackagePrice,
-      priceId: 'pri_01k8bm1n7k6kdkb62d0e5r1nha',
+      priceId: 'pri_01krk1p8r73ba0kv41bfy09k89',
       description: 'Complete Vehicle Report',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
     }
@@ -191,7 +191,7 @@ export default function Pricing() {
         email: formData.email.trim(),
         vin: formData.vin.trim(),
         package: DOCUKIT_CHECKOUT_PACKAGE,
-        currency: 'GBP',
+        currency: 'EUR',
         success_url: getDefaultSuccessUrl(),
       });
       window.location.href = paymentUrl;
@@ -273,7 +273,7 @@ export default function Pricing() {
                   
                   <div className="mb-8">
                     <div className="flex items-center justify-center mb-2">
-                      <span className="text-5xl font-bold text-blue-600">£{tier.price}</span>
+                      <span className="text-5xl font-bold text-blue-600">€{tier.price}</span>
                     </div>
                     <p className="text-gray-600 text-sm">One-time payment</p>
                   </div>
@@ -321,7 +321,7 @@ export default function Pricing() {
               What is Included in Every Report
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              For £{reportPackagePrice}, you get a comprehensive vehicle history analysis with data from multiple trusted sources.
+              For €{reportPackagePrice}, you get a comprehensive vehicle history analysis with data from multiple trusted sources.
             </p>
           </div>
 
@@ -468,7 +468,7 @@ export default function Pricing() {
             {[
               {
                 question: "What does the Ultimate report include?",
-                answer: `Our comprehensive £${reportPackagePrice} report includes full accident history, complete ownership records, mileage verification, title information, safety recalls, market value analysis, and detailed damage assessment - everything you need for informed vehicle purchasing decisions.`
+                answer: `Our comprehensive €${reportPackagePrice} report includes full accident history, complete ownership records, mileage verification, title information, safety recalls, market value analysis, and detailed damage assessment - everything you need for informed vehicle purchasing decisions.`
               },
               {
                 question: "Why choose VinXtract?",
@@ -515,14 +515,14 @@ export default function Pricing() {
               onClick={openModal}
               className="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-lg inline-block"
             >
-              Get Started - £{PRICING_TIERS.standard.price}
+              Get Started - €{PRICING_TIERS.standard.price}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div className="text-center">
               <div className="font-semibold text-white">Single pricing option</div>
-              <div className="text-blue-100">£{reportPackagePrice} per report</div>
+              <div className="text-blue-100">€{reportPackagePrice} per report</div>
             </div>
             <div className="text-center">
               <div className="font-semibold text-white">Fast delivery: 6-12 hours</div>

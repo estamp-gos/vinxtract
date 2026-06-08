@@ -14,8 +14,8 @@ $phone = isset($_GET['phone']) ? htmlspecialchars(urldecode($_GET['phone'])) : '
 $vin = isset($_GET['vin']) ? htmlspecialchars(urldecode($_GET['vin'])) : '';
 $vehicleType = isset($_GET['vehicle_type']) ? htmlspecialchars(urldecode($_GET['vehicle_type'])) : 'Car';
 $package = isset($_GET['package']) ? htmlspecialchars(urldecode($_GET['package'])) : 'basic';
-$amount = isset($_GET['amount']) ? (float)$_GET['amount'] : 29;
-$currency = isset($_GET['currency']) ? htmlspecialchars(urldecode($_GET['currency'])) : 'USD';
+$amount = isset($_GET['amount']) ? (float)$_GET['amount'] : 24.99;
+$currency = isset($_GET['currency']) ? htmlspecialchars(urldecode($_GET['currency'])) : 'EUR';
 
 // Validate required fields
 if (empty($name) || empty($email) || empty($vin)) {
@@ -39,7 +39,7 @@ if ($currency == 'EUR') $currencySymbol = '€';
 $priceIds = [
     'basic' => 'pri_01krk1p8r73ba0kv41bfy09k89',
     'premium' => 'pri_01krk1n9tnjg7nyex9e4n6akkw',
-    'ultimate' => 'pri_01krk1kkza3vmnvdbgj69m09c8'
+    'ultimate' => 'pri_01krk1p8r73ba0kv41bfy09k89'
 ];
 
 $paddleToken = 'live_4d8274c2bffeec3a2558df9da5a';
@@ -153,7 +153,7 @@ $successUrl = 'https://www.vinxtract.com/thankyou';
                 <div class="summary-row"><span class="summary-label">VIN Number</span><span class="summary-value"><?php echo $vin ?: '—'; ?></span></div>
                 <div class="summary-row"><span class="summary-label">Vehicle Type</span><span class="summary-value"><?php echo $vehicleType ?: '—'; ?></span></div>
                 <div class="summary-row"><span class="summary-label">Package</span><span class="summary-value"><?php echo $displayPackage; ?></span></div>
-                <div class="summary-row total-row"><span class="summary-label">Total Amount</span><span class="summary-value"><?php echo $currencySymbol . number_format($amount); ?> <?php echo $currency; ?></span></div>
+                <div class="summary-row total-row"><span class="summary-label">Total Amount</span><span class="summary-value"><?php echo $currencySymbol . number_format($amount, 2); ?> <?php echo $currency; ?></span></div>
             </div>
             
             <div class="checkbox-group">
@@ -164,7 +164,7 @@ $successUrl = 'https://www.vinxtract.com/thankyou';
             </div>
             
             <button class="btn-paddle" id="payNowBtn" disabled>
-                <span>Proceed to Payment (<?php echo $currencySymbol . number_format($amount); ?>)</span>
+                <span>Proceed to Payment (<?php echo $currencySymbol . number_format($amount, 2); ?>)</span>
             </button>
             
             <div class="loading" id="loading">
