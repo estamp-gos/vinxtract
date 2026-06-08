@@ -6,6 +6,7 @@ import {
   buildDocuKitPaymentUrl,
   getDefaultSuccessUrl,
   DOCUKIT_CHECKOUT_PACKAGE,
+  DOCUKIT_PADDLE_PRICE_ID,
   getPackagePrice,
 } from '@/lib/docukitPayment';
 
@@ -46,12 +47,12 @@ export default function Pricing() {
 
   const reportPackagePrice = getPackagePrice(DOCUKIT_CHECKOUT_PACKAGE, 'EUR');
 
-  // Pricing Tiers Configuration - matches DocuKit ultimate package
+  // Pricing Tiers Configuration - matches DocuKit basic package
   const PRICING_TIERS = {
     standard: {
-      name: 'Ultimate',
+      name: 'basic',
       price: reportPackagePrice,
-      priceId: 'pri_01krk1p8r73ba0kv41bfy09k89',
+      priceId: DOCUKIT_PADDLE_PRICE_ID,
       description: 'Complete Vehicle Report',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
     }
@@ -467,7 +468,7 @@ export default function Pricing() {
           <div className="space-y-6">
             {[
               {
-                question: "What does the Ultimate report include?",
+                question: "What does the Basic report include?",
                 answer: `Our comprehensive €${reportPackagePrice} report includes full accident history, complete ownership records, mileage verification, title information, safety recalls, market value analysis, and detailed damage assessment - everything you need for informed vehicle purchasing decisions.`
               },
               {

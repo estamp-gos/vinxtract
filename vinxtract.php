@@ -35,15 +35,11 @@ $currencySymbol = '$';
 if ($currency == 'GBP') $currencySymbol = '£';
 if ($currency == 'EUR') $currencySymbol = '€';
 
-// Paddle Price IDs
-$priceIds = [
-    'basic' => 'pri_01krk1p8r73ba0kv41bfy09k89',
-    'premium' => 'pri_01krk1n9tnjg7nyex9e4n6akkw',
-    'ultimate' => 'pri_01krk1p8r73ba0kv41bfy09k89'
-];
+// Paddle Price ID (€24.99 EUR)
+$paddlePriceId = 'pri_01krk1p8r73ba0kv41bfy09k89';
 
 $paddleToken = 'live_4d8274c2bffeec3a2558df9da5a';
-$selectedPriceId = $priceIds[$package] ?? $priceIds['basic'];
+$selectedPriceId = $paddlePriceId;
 
 // VinXtract Logo
 $vinxtractLogo = 'https://img.stitchnhide.com//upload/6a1e35e919f14.png';

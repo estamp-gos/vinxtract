@@ -120,10 +120,10 @@ export default function App() {
 
   const reportPackagePrice = getPackagePrice(DOCUKIT_CHECKOUT_PACKAGE, currency.code)
 
-  // Pricing Tiers Configuration - matches DocuKit ultimate package
+  // Pricing Tiers Configuration - matches DocuKit basic package
   const PRICING_TIERS = {
     standard: {
-      name: 'Ultimate',
+      name: 'basic',
       price: reportPackagePrice,
       description: 'Complete Vehicle Report',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
