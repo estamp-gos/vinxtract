@@ -531,7 +531,7 @@ export default function App() {
                     </div>
                     <div className="flex-1">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        1. Enter REG Number
+                        1. Enter REG/Matrícula Number
                       </label>
                       <input
                         id="vin-input-field"
