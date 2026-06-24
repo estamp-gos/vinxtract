@@ -419,8 +419,8 @@ export default function App() {
               </div>
 
               <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 leading-tight animate-fadeInUp delay-100">
-              Saiba Antes de Comprar <br />
-                <span className="gradient-text-blue">Histórico Completo do Veículo em Minutos</span>
+              Know Before You Buy <br />
+                <span className="gradient-text-blue">Complete Vehicle History in Minutes</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8 max-w-3xl animate-fadeInUp delay-200">
                 Don&apos;t risk buying a lemon! Get instant access to <strong>accident history, title issues, odometer fraud,</strong> and more. Our comprehensive reports help you make confident decisions and negotiate better prices.
