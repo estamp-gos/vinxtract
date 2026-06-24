@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  buildDocuKitPaymentUrl,
-  getDefaultSuccessUrl,
-  DOCUKIT_CHECKOUT_PACKAGE,
-  DOCUKIT_PADDLE_PRICE_ID,
-  getPackagePrice,
-} from '@/lib/docukitPayment';
+  CARD_PRICE_GBP,
+  BANK_PRICE_GBP,
+  WISE_BANK_URL,
+  formatGbpPrice,
+  buildUploadProofUrl,
+} from '@/lib/paymentConfig';
 
 export default function Pricing() {
   const [showModal, setShowModal] = useState(false);
@@ -19,6 +19,8 @@ export default function Pricing() {
     vin: ''
   });
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showCardDownModal, setShowCardDownModal] = useState(false);
 
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
 
@@ -45,14 +47,12 @@ export default function Pricing() {
     storeConfigUrl();
   }, []);
 
-  const reportPackagePrice = getPackagePrice(DOCUKIT_CHECKOUT_PACKAGE, 'EUR');
+  const reportPackagePrice = CARD_PRICE_GBP;
 
-  // Pricing Tiers Configuration - matches DocuKit basic package
   const PRICING_TIERS = {
     standard: {
       name: 'basic',
       price: reportPackagePrice,
-      priceId: DOCUKIT_PADDLE_PRICE_ID,
       description: 'Complete Vehicle Report',
       features: ['Full accident history', 'Complete ownership records', 'Mileage verification', 'Title information', 'Safety recalls', 'Market value analysis', 'Detailed damage assessment']
     }
@@ -114,6 +114,17 @@ export default function Pricing() {
       fontWeight: '600',
       cursor: 'pointer'
     },
+    cancelButton: {
+      width: '100%',
+      padding: '15px',
+      background: '#6b7280',
+      color: 'white',
+      border: 'none',
+      borderRadius: '5px',
+      fontSize: '16px',
+      fontWeight: '600',
+      cursor: 'pointer'
+    },
     loadingSpinner: {
       border: '4px solid rgba(0, 0, 0, 0.1)',
       borderRadius: '50%',
@@ -138,6 +149,8 @@ export default function Pricing() {
     setShowModal(false);
     setFormData({ name: '', email: '', vin: '' });
     setLoading(false);
+    setAcceptedTerms(false);
+    setShowCardDownModal(false);
   };
 
   // Handle form input changes
@@ -173,34 +186,57 @@ export default function Pricing() {
   // Direct Paddle overlay checkout (disabled — use DocuKit redirect)
   // const openPaddleCheckout = (customerName, customerEmail, customerVin) => { ... };
 
-  // Handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setLoading(true);
-
+  const saveOrderAndNotify = async () => {
     const submitData = {
-      name: formData.name,
-      email: formData.email,
-      vin: formData.vin
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      vin: formData.vin.trim(),
     };
 
-    sendMail(submitData);
+    const savedReport = {
+      vin: submitData.vin,
+      email: submitData.email,
+      carModel: submitData.name,
+      year: '',
+      tier: selectedTier,
+      tierName: PRICING_TIERS[selectedTier].name,
+      tierPrice: CARD_PRICE_GBP,
+      currency: 'GBP',
+      currencySymbol: '£',
+      paymentMethod: 'bank',
+      amountPaid: BANK_PRICE_GBP,
+      timestamp: new Date().toISOString(),
+    };
 
-    try {
-      const paymentUrl = buildDocuKitPaymentUrl({
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        vin: formData.vin.trim(),
-        package: DOCUKIT_CHECKOUT_PACKAGE,
-        currency: 'EUR',
-        success_url: getDefaultSuccessUrl(),
-      });
-      window.location.href = paymentUrl;
-    } catch (e) {
-      console.error('DocuKit payment redirect failed:', e);
-      setLoading(false);
-      alert('Unable to open the payment page. Please try again.');
+    localStorage.setItem('vinReport', JSON.stringify(savedReport));
+    sendMail(submitData);
+  };
+
+  const payViaBank = async () => {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.vin.trim()) {
+      alert('Please fill in all required fields.');
+      return;
     }
+    if (!acceptedTerms) return;
+
+    setLoading(true);
+    await saveOrderAndNotify();
+    window.open(WISE_BANK_URL, '_blank', 'noopener,noreferrer');
+    window.location.href = buildUploadProofUrl();
+  };
+
+  const payViaCard = () => {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.vin.trim()) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+    if (!acceptedTerms) return;
+    setShowCardDownModal(true);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    payViaBank();
   };
   return (
     <div className="min-h-screen bg-white">
@@ -274,7 +310,7 @@ export default function Pricing() {
                   
                   <div className="mb-8">
                     <div className="flex items-center justify-center mb-2">
-                      <span className="text-5xl font-bold text-blue-600">€{tier.price}</span>
+                      <span className="text-5xl font-bold text-blue-600">{formatGbpPrice(tier.price)}</span>
                     </div>
                     <p className="text-gray-600 text-sm">One-time payment</p>
                   </div>
@@ -322,7 +358,7 @@ export default function Pricing() {
               What is Included in Every Report
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              For €{reportPackagePrice}, you get a comprehensive vehicle history analysis with data from multiple trusted sources.
+              For {formatGbpPrice(reportPackagePrice)}, you get a comprehensive vehicle history analysis with data from multiple trusted sources.
             </p>
           </div>
 
@@ -469,7 +505,7 @@ export default function Pricing() {
             {[
               {
                 question: "What does the Basic report include?",
-                answer: `Our comprehensive €${reportPackagePrice} report includes full accident history, complete ownership records, mileage verification, title information, safety recalls, market value analysis, and detailed damage assessment - everything you need for informed vehicle purchasing decisions.`
+                answer: `Our comprehensive ${formatGbpPrice(reportPackagePrice)} report includes full accident history, complete ownership records, mileage verification, title information, safety recalls, market value analysis, and detailed damage assessment - everything you need for informed vehicle purchasing decisions.`
               },
               {
                 question: "Why choose VinXtract?",
@@ -516,14 +552,14 @@ export default function Pricing() {
               onClick={openModal}
               className="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-lg inline-block"
             >
-              Get Started - €{PRICING_TIERS.standard.price}
+              Get Started - {formatGbpPrice(PRICING_TIERS.standard.price)}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div className="text-center">
               <div className="font-semibold text-white">Single pricing option</div>
-              <div className="text-blue-100">€{reportPackagePrice} per report</div>
+              <div className="text-blue-100">{formatGbpPrice(reportPackagePrice)} per report</div>
             </div>
             <div className="text-center">
               <div className="font-semibold text-white">Fast delivery: 6-12 hours</div>
@@ -582,9 +618,15 @@ export default function Pricing() {
               &times;
             </span>
             
-            <h3 style={{ marginBottom: '20px', color: '#2563eb' }}>
-              Enter Your Details
+            <h3 style={{ marginBottom: '20px', color: '#2563eb', fontSize: '24px', fontWeight: 'bold' }}>
+              Complete Your Purchase
             </h3>
+
+            <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f3f4f6', borderRadius: '8px' }}>
+              <p style={{ marginBottom: '0', fontSize: '14px', color: '#4b5563' }}>
+                <strong>Report Type:</strong> {PRICING_TIERS[selectedTier].name} - {formatGbpPrice(PRICING_TIERS[selectedTier].price)}
+              </p>
+            </div>
             
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '15px' }}>
@@ -629,24 +671,110 @@ export default function Pricing() {
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  ...modalStyles.submitButton,
-                  display: loading ? 'none' : 'block'
-                }}
-              >
-                Proceed to Payment
-              </button>
+              <p style={{ marginBottom: '15px', color: '#111827', fontSize: '14px', fontWeight: '600' }}>
+                I CONFIRM THAT I AM VOLUNTARILY PURCHASING A VEHICLE INSPECTION REPORT FROM VINXTRACT. THE REPORT WILL BE DELIVERED WITHIN THE STATED TIMEFRAME, AND ONCE DELIVERED, IT IS NON-REFUNDABLE.
+              </p>
 
-              {loading && (
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '20px', fontSize: '14px', color: '#374151' }}>
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  style={{ width: '18px', height: '18px', marginTop: '2px' }}
+                />
+                <span>
+                  I have read and agree to the purchase confirmation above.
+                </span>
+              </label>
+
+              {!loading ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={payViaBank}
+                    disabled={!acceptedTerms}
+                    style={{
+                      ...modalStyles.submitButton,
+                      opacity: acceptedTerms ? 1 : 0.6,
+                      cursor: acceptedTerms ? 'pointer' : 'not-allowed',
+                      marginBottom: '10px'
+                    }}
+                  >
+                    Pay via Bank (Get £7 discount) — {formatGbpPrice(BANK_PRICE_GBP)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={payViaCard}
+                    disabled={!acceptedTerms}
+                    style={{
+                      ...modalStyles.submitButton,
+                      background: '#fff',
+                      color: '#2563eb',
+                      border: '2px solid #2563eb',
+                      opacity: acceptedTerms ? 1 : 0.6,
+                      cursor: acceptedTerms ? 'pointer' : 'not-allowed',
+                      marginBottom: '10px'
+                    }}
+                  >
+                    Pay via Card — {formatGbpPrice(CARD_PRICE_GBP)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    style={modalStyles.cancelButton}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
                 <div style={{ textAlign: 'center', marginTop: '15px' }}>
                   <div style={modalStyles.loadingSpinner}></div>
-                  <p>Loading...</p>
+                  <p>Opening bank payment...</p>
                 </div>
               )}
             </form>
+          </div>
+        </div>
+      )}
+
+      {showCardDownModal && (
+        <div
+          style={modalStyles.overlay}
+          onClick={() => setShowCardDownModal(false)}
+        >
+          <div
+            style={modalStyles.modal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span
+              style={modalStyles.closeButton}
+              onClick={() => setShowCardDownModal(false)}
+            >
+              &times;
+            </span>
+            <h3 style={{ marginBottom: '16px', color: '#2563eb', fontSize: '20px', fontWeight: 'bold' }}>
+              Card Payment Unavailable
+            </h3>
+            <p style={{ marginBottom: '20px', color: '#4b5563', fontSize: '14px', lineHeight: 1.6 }}>
+              Our credit/debit card payment server is temporarily down. Kindly pay via bank transfer to get your report faster and save £7.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setShowCardDownModal(false);
+                payViaBank();
+              }}
+              style={{ ...modalStyles.submitButton, marginBottom: '10px' }}
+            >
+              Pay via Bank — {formatGbpPrice(BANK_PRICE_GBP)}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCardDownModal(false)}
+              style={modalStyles.cancelButton}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

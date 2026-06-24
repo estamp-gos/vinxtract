@@ -3,12 +3,12 @@ import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useVehicle } from '@/lib/vehicleContext'
 import {
-  buildDocuKitPaymentUrl,
-  deriveCustomerName,
-  getDefaultSuccessUrl,
-  DOCUKIT_CHECKOUT_PACKAGE,
-  getPackagePrice,
-} from '@/lib/docukitPayment'
+  CARD_PRICE_GBP,
+  BANK_PRICE_GBP,
+  WISE_BANK_URL,
+  formatGbpPrice,
+  buildUploadProofUrl,
+} from '@/lib/paymentConfig'
 
 export default function App() {
   const {
@@ -53,39 +53,14 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [showCardDownModal, setShowCardDownModal] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [selectedTier, setSelectedTier] = useState('standard')
   const [vehicleType, setVehicleType] = useState('Car')
   
-  // IP Detection & Currency State
-  const [currency, setCurrency] = useState({ symbol: '€', code: 'EUR', rate: 1 })
+  const currency = { symbol: '£', code: 'GBP', rate: 1 }
 
-  useEffect(() => {
-    const detectLocation = async () => {
-      try {
-        // Free IP geolocation API, no key required
-        const response = await fetch('https://api.country.is')
-        const data = await response.json()
-        
-        // Always set to EUR
-        setCurrency({ symbol: '€', code: 'EUR', rate: 1 }) 
-      } catch (error) {
-        console.error('Failed to detect IP location:', error)
-        setCurrency({ symbol: '€', code: 'EUR', rate: 1 })
-      }
-    }
-    
-    detectLocation()
-  }, [])
-
-  // Helper function to dynamically format prices based on the detected currency
-  const formatPrice = (price) => {
-    const value = price * currency.rate
-    const formatted = Number.isInteger(value)
-      ? value.toLocaleString()
-      : value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    return `${currency.symbol}${formatted}`
-  }
+  const formatPrice = (price) => formatGbpPrice(price * currency.rate)
 
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0bVanKVZ3zfqGV7zApM6jDyu5PJGWvyMPADqKmZKqg-_Ol0FcOf4sD4nFT2M8t_xVg/exec";
 
@@ -118,7 +93,7 @@ export default function App() {
     storeConfigUrl();
   }, []);
 
-  const reportPackagePrice = getPackagePrice(DOCUKIT_CHECKOUT_PACKAGE, currency.code)
+  const reportPackagePrice = CARD_PRICE_GBP
 
   // Pricing Tiers Configuration - matches DocuKit basic package
   const PRICING_TIERS = {
@@ -197,34 +172,35 @@ export default function App() {
     }
   }
 
-  // Redirect to DocuKit payment page (Paddle checkout)
-  const proceedToPayment = () => {
+  const payViaBank = () => {
+    if (!acceptedTerms) return
     setCheckoutLoading(true)
     try {
-      const paymentUrl = buildDocuKitPaymentUrl({
-        name: deriveCustomerName({
-          email: emailInput,
-          carModel: carModelInput,
-        }),
-        email: emailInput.trim(),
-        vin: vinInput.trim(),
-        vehicle_type: vehicleType,
-        package: DOCUKIT_CHECKOUT_PACKAGE,
-        currency: currency.code,
-        success_url: getDefaultSuccessUrl(),
-      })
-      window.location.href = paymentUrl
-    } catch (e) {
-      console.error('DocuKit payment redirect failed:', e)
-      setCheckoutLoading(false)
-      alert('Unable to open the payment page. Please try again.')
+      const existing = localStorage.getItem('vinReport')
+      const report = existing ? JSON.parse(existing) : {}
+      localStorage.setItem('vinReport', JSON.stringify({
+        ...report,
+        paymentMethod: 'bank',
+        amountPaid: BANK_PRICE_GBP,
+        currency: 'GBP',
+        currencySymbol: '£',
+      }))
+    } catch {
+      // continue redirect even if storage fails
     }
+    window.open(WISE_BANK_URL, '_blank', 'noopener,noreferrer')
+    window.location.href = buildUploadProofUrl()
   }
 
-  // Close checkout modal
+  const payViaCard = () => {
+    if (!acceptedTerms) return
+    setShowCardDownModal(true)
+  }
+
   const closeCheckoutModal = () => {
     setShowCheckoutModal(false)
     setCheckoutLoading(false)
+    setShowCardDownModal(false)
     setAcceptedTerms(false)
   }
 
@@ -2195,7 +2171,7 @@ export default function App() {
             {!checkoutLoading ? (
               <>
                 <button
-                  onClick={proceedToPayment}
+                  onClick={payViaBank}
                   style={{
                     ...modalStyles.proceedButton,
                     opacity: acceptedTerms ? 1 : 0.6,
@@ -2203,7 +2179,21 @@ export default function App() {
                   }}
                   disabled={!acceptedTerms}
                 >
-                  Proceed to Payment - {formatPrice(PRICING_TIERS[selectedTier].price)}
+                  Pay via Bank (Get £7 discount) — {formatGbpPrice(BANK_PRICE_GBP)}
+                </button>
+                <button
+                  onClick={payViaCard}
+                  style={{
+                    ...modalStyles.proceedButton,
+                    background: '#fff',
+                    color: '#2563eb',
+                    border: '2px solid #2563eb',
+                    opacity: acceptedTerms ? 1 : 0.6,
+                    cursor: acceptedTerms ? 'pointer' : 'not-allowed'
+                  }}
+                  disabled={!acceptedTerms}
+                >
+                  Pay via Card — {formatGbpPrice(CARD_PRICE_GBP)}
                 </button>
                 <button
                   onClick={closeCheckoutModal}
@@ -2215,9 +2205,49 @@ export default function App() {
             ) : (
               <div style={{ textAlign: 'center', marginTop: '15px' }}>
                 <div style={modalStyles.loadingSpinner}></div>
-                <p>Redirecting to secure payment...</p>
+                <p>Opening bank payment...</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showCardDownModal && (
+        <div
+          style={modalStyles.overlay}
+          onClick={() => setShowCardDownModal(false)}
+        >
+          <div
+            style={modalStyles.modal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              style={modalStyles.closeButton}
+              onClick={() => setShowCardDownModal(false)}
+            >
+              &times;
+            </button>
+            <h3 style={{ marginBottom: '16px', color: '#2563eb', fontSize: '20px', fontWeight: 'bold' }}>
+              Card Payment Unavailable
+            </h3>
+            <p style={{ marginBottom: '20px', color: '#4b5563', fontSize: '14px', lineHeight: 1.6 }}>
+              Our credit/debit card payment server is temporarily down. Kindly pay via bank transfer to get your report faster and save £7.
+            </p>
+            <button
+              onClick={() => {
+                setShowCardDownModal(false)
+                payViaBank()
+              }}
+              style={modalStyles.proceedButton}
+            >
+              Pay via Bank — {formatGbpPrice(BANK_PRICE_GBP)}
+            </button>
+            <button
+              onClick={() => setShowCardDownModal(false)}
+              style={modalStyles.cancelButton}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
