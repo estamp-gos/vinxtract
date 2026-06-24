@@ -179,7 +179,7 @@ export default function UploadProof() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payment screenshot (image or PDF, max 4MB)
               </label>
               <input
@@ -187,8 +187,34 @@ export default function UploadProof() {
                 accept="image/*,.pdf"
                 required
                 onChange={handleFileChange}
-                className="w-full text-sm text-gray-600"
+                className="sr-only"
+                id="proof-upload"
               />
+              <label
+                htmlFor="proof-upload"
+                className={`flex flex-col items-center justify-center w-full min-h-[140px] rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+                  proofFile
+                    ? 'border-blue-600 bg-blue-50'
+                    : 'border-blue-500 bg-blue-50/60 hover:bg-blue-50 hover:border-blue-600'
+                }`}
+              >
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white text-2xl font-bold mb-3 shadow-md">
+                  +
+                </div>
+                {proofFile ? (
+                  <>
+                    <p className="text-sm font-semibold text-blue-700 px-4 text-center break-all">
+                      {proofFile.name}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Tap to change file</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold text-blue-700">Tap to upload screenshot</p>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG or PDF — max 4MB</p>
+                  </>
+                )}
+              </label>
             </div>
 
             <div>

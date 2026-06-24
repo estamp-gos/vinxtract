@@ -687,6 +687,10 @@ export default function Pricing() {
                 </span>
               </label>
 
+              <p style={{ marginBottom: '20px', color: '#4b5563', fontSize: '13px', lineHeight: 1.5 }}>
+                Please ensure payments are directed to AMU Traders LLC. Your bank statement will reflect our name for easy tracking.
+              </p>
+
               {!loading ? (
                 <>
                   <button

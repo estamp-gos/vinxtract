@@ -2111,6 +2111,7 @@ export default function App() {
           onClick={closeCheckoutModal}
         >
           <div 
+            className="checkout-modal-dialog"
             style={modalStyles.modal}
             onClick={(e) => e.stopPropagation()}
           >
@@ -2121,42 +2122,42 @@ export default function App() {
               &times;
             </button>
             
-            <h3 style={{ marginBottom: '20px', color: '#2563eb', fontSize: '24px', fontWeight: 'bold' }}>
+            <h3 className="checkout-modal-title" style={{ marginBottom: '20px', color: '#2563eb', fontSize: '24px', fontWeight: 'bold' }}>
               Complete Your Purchase
             </h3>
             
-            <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f3f4f6', borderRadius: '8px' }}>
-              <p style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
+            <div className="checkout-modal-summary" style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f3f4f6', borderRadius: '8px' }}>
+              <p className="checkout-modal-text" style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
                 <strong>REG:</strong> {vinInput}
               </p>
-              <p style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
+              <p className="checkout-modal-text" style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
                 <strong>Year:</strong> {year}
               </p>
               {enrichment ? (
-                <p style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
+                <p className="checkout-modal-text" style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
                   <strong>Preview:</strong> {enrichment.make} {enrichment.model} · {enrichment.engine}
                 </p>
               ) : null}
-              <p style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
+              <p className="checkout-modal-text" style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
                 <strong>Email:</strong> {emailInput}
               </p>
-              <p style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
+              <p className="checkout-modal-text" style={{ marginBottom: '10px', fontSize: '14px', color: '#4b5563' }}>
                 <strong>Car Model:</strong> {carModelInput}
               </p>
-              <p style={{ marginBottom: '0', fontSize: '14px', color: '#4b5563' }}>
+              <p className="checkout-modal-text" style={{ marginBottom: '0', fontSize: '14px', color: '#4b5563' }}>
                 <strong>Report Type:</strong> {PRICING_TIERS[selectedTier].name} - {formatPrice(PRICING_TIERS[selectedTier].price)}
               </p>
             </div>
 
-            <p style={{ marginBottom: '20px', color: '#6b7280', fontSize: '14px' }}>
+            <p className="checkout-modal-text" style={{ marginBottom: '20px', color: '#6b7280', fontSize: '14px' }}>
               Click below to proceed to secure payment. Your vehicle history report ({PRICING_TIERS[selectedTier].name} tier) will be delivered to your email within 6-12 hours (usually 1-2 hours).
             </p>
 
-            <p style={{ marginBottom: '15px', color: '#111827', fontSize: '14px', fontWeight: '600' }}>
+            <p className="checkout-modal-text checkout-modal-confirm" style={{ marginBottom: '15px', color: '#111827', fontSize: '14px', fontWeight: '600' }}>
               I CONFIRM THAT I AM VOLUNTARILY PURCHASING A VEHICLE INSPECTION REPORT FROM VINXTRACT. THE REPORT WILL BE DELIVERED WITHIN THE STATED TIMEFRAME, AND ONCE DELIVERED, IT IS NON-REFUNDABLE.
             </p>
 
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '20px', fontSize: '14px', color: '#374151' }}>
+            <label className="checkout-modal-text checkout-modal-checkbox" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '20px', fontSize: '14px', color: '#374151' }}>
               <input
                 type="checkbox"
                 checked={acceptedTerms}
@@ -2168,9 +2169,14 @@ export default function App() {
               </span>
             </label>
 
+            <p className="checkout-modal-text" style={{ marginBottom: '20px', color: '#4b5563', fontSize: '13px', lineHeight: 1.5 }}>
+              Please ensure payments are directed to AMU Traders LLC. Your bank statement will reflect our name for easy tracking.
+            </p>
+
             {!checkoutLoading ? (
               <>
                 <button
+                  className="checkout-modal-btn"
                   onClick={payViaBank}
                   style={{
                     ...modalStyles.proceedButton,
@@ -2182,6 +2188,7 @@ export default function App() {
                   Pay via Bank (Get £7 discount) — {formatGbpPrice(BANK_PRICE_GBP)}
                 </button>
                 <button
+                  className="checkout-modal-btn"
                   onClick={payViaCard}
                   style={{
                     ...modalStyles.proceedButton,
@@ -2196,6 +2203,7 @@ export default function App() {
                   Pay via Card — {formatGbpPrice(CARD_PRICE_GBP)}
                 </button>
                 <button
+                  className="checkout-modal-btn"
                   onClick={closeCheckoutModal}
                   style={modalStyles.cancelButton}
                 >
@@ -2218,6 +2226,7 @@ export default function App() {
           onClick={() => setShowCardDownModal(false)}
         >
           <div
+            className="checkout-modal-dialog"
             style={modalStyles.modal}
             onClick={(e) => e.stopPropagation()}
           >
@@ -2256,6 +2265,17 @@ export default function App() {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+          .checkout-modal-dialog {
+            transform: scale(0.7);
+            transform-origin: center center;
+            width: 90% !important;
+            max-width: 500px !important;
+            max-height: 90vh;
+            overflow-y: auto;
+          }
         }
       `}</style>
     </div>
